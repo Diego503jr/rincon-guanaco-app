@@ -1,20 +1,14 @@
-import { StatusBar } from 'expo-status-bar';
-import { StyleSheet, Text, View } from 'react-native';
+import StackNavigation from "./src/routes/StackNavigation";
+import { useFonts } from "expo-font";
+import { Poppins_600SemiBold } from "@expo-google-fonts/poppins";
+import { Inter_400Regular } from "@expo-google-fonts/inter";
 
 export default function App() {
+  const [fontsLoaded] = useFonts({ Poppins_600SemiBold, Inter_400Regular });
+
   return (
-    <View style={styles.container}>
-      <Text>Open up App.js to start working on your app!</Text>
-      <StatusBar style="auto" />
-    </View>
+    <>
+      <StackNavigation />
+    </>
   );
 }
-
-const styles = StyleSheet.create({
-  container: {
-    flex: 1,
-    backgroundColor: '#fff',
-    alignItems: 'center',
-    justifyContent: 'center',
-  },
-});

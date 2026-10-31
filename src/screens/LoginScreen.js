@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useState, useRef } from "react";
 import {
   View,
   Text,
@@ -12,7 +12,7 @@ import {
   Platform,
   ActivityIndicator,
 } from "react-native";
-import {useNavigation} from "@react-navigation/native"
+import { useNavigation } from "@react-navigation/native";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 import { Ionicons } from "@expo/vector-icons";
 import {
@@ -23,9 +23,13 @@ import {
   FONTS,
   SIZES,
 } from "../constants/theme";
+import { useUser } from "../context/UserContext";
+import { getErrorMessage } from "../api/errors";
 
 const LoginScreen = () => {
   const insets = useSafeAreaInsets();
+
+  const { login } = useUser();
 
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
@@ -35,11 +39,48 @@ const LoginScreen = () => {
 
   const navigation = useNavigation();
 
+  const EMAIL_REGEX = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+
+  const emailRef = useRef(null);
+  const passwordRef = useRef(null);
+
+  const validate = () => {
+    const newErrors = {};
+
+    if (!email.trim()) {
+      newErrors.email = "Ingresa tu correo.";
+    } else if (!EMAIL_REGEX.test(email.trim())) {
+      newErrors.email = "El correo no es válido.";
+    }
+
+    if (!password) {
+      newErrors.password = "Ingresa tu contraseña.";
+    }
+
+    setErrors(newErrors);
+
+    // Lleva el cursor al primer campo con error
+    if (newErrors.email) emailRef.current?.focus();
+    else if (newErrors.password) passwordRef.current?.focus();
+
+    return Object.keys(newErrors).length === 0;
+  };
+
+  // Quita el error de un campo (y el del servidor) cuando el usuario escribe
+  const clearError = (field) => {
+    setErrors((prev) => ({ ...prev, [field]: undefined, general: undefined }));
+  };
+
   const handleLogin = async () => {
     if (!validate()) return;
+
     setLoading(true);
+    setErrors({});
+
     try {
-      // navigation.replace('Home');
+      await login(email.trim(), password);
+    } catch (error) {
+      setErrors({ general: getErrorMessage(error) });
     } finally {
       setLoading(false);
     }
@@ -81,7 +122,10 @@ const LoginScreen = () => {
           <TextInput
             style={[styles.input, errors.email && styles.inputError]}
             value={email}
-            onChangeText={setEmail}
+            onChangeText={(text) => {
+              setEmail(text);
+              clearError("email");
+            }}
             keyboardType="email-address"
             autoCapitalize="none"
             autoComplete="email"
@@ -99,7 +143,10 @@ const LoginScreen = () => {
                 errors.password && styles.inputError,
               ]}
               value={password}
-              onChangeText={setPassword}
+              onChangeText={(text) => {
+                setPassword(text);
+                clearError("password");
+              }}
               secureTextEntry={!showPassword}
               autoCapitalize="none"
               autoComplete="password"
@@ -121,6 +168,13 @@ const LoginScreen = () => {
           </View>
           {errors.password && (
             <Text style={styles.errorText}>{errors.password}</Text>
+          )}
+
+          {/* Error del servidor (credenciales incorrectas, sin conexión, usuario inactivo...) */}
+          {errors.general && (
+            <Text style={[styles.errorText, styles.generalError]}>
+              {errors.general}
+            </Text>
           )}
 
           {/* Botón */}
@@ -173,7 +227,7 @@ const styles = StyleSheet.create({
     paddingHorizontal: SPACING.lg,
     paddingTop: SPACING.lg,
     paddingBottom: SPACING.xl,
-    marginTop: 25
+    marginTop: 25,
   },
   logo: {
     width: 120,

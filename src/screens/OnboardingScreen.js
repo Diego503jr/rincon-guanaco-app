@@ -28,13 +28,19 @@ const slides = [
   }
 ];
 
-export default function OnboardingScreen({ navigation }) {
+export default function OnboardingScreen({ navigation, route }) {
   const [currentIndex, setCurrentIndex] = useState(0);
   const flatListRef = useRef(null);
 
   const completeOnboarding = async () => {
     try {
-      await AsyncStorage.setItem('@has_seen_onboarding', 'true');
+      // Leemos el userId que mandamos desde Login (usamos 'default' por precaución)
+      const userId = route.params?.userId || 'default';
+      const storageKey = `@onboarding_${userId}`;
+
+      // Guardamos la bandera específica para este usuario
+      await AsyncStorage.setItem(storageKey, 'true');
+      
       navigation.replace('Home');
     } catch (error) {
       console.error("Error guardando el estado:", error);

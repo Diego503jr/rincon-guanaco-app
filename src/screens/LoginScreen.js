@@ -25,6 +25,7 @@ import {
 } from "../constants/theme";
 import { useUser } from "../context/UserContext";
 import { getErrorMessage } from "../api/errors";
+import AsyncStorage from '@react-native-async-storage/async-storage';
 
 const LoginScreen = () => {
   const insets = useSafeAreaInsets();
@@ -79,6 +80,19 @@ const LoginScreen = () => {
 
     try {
       await login(email.trim(), password);
+
+      //OnBoarding por usuario unico
+      const userIdentifier = email.trim().toLowerCase();
+      const storageKey = `@onboarding_${userIdentifier}`;
+      
+      const hasSeenOnboarding = await AsyncStorage.getItem(storageKey);
+
+      if (hasSeenOnboarding === 'true') {
+        navigation.replace('Home');
+      } else {
+        // Pasamos el identificador a la pantalla de Onboarding mediante los parámetros
+        navigation.replace('Onboarding', { userId: userIdentifier });
+      }
     } catch (error) {
       setErrors({ general: getErrorMessage(error) });
     } finally {

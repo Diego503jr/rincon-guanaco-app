@@ -79,20 +79,11 @@ const LoginScreen = () => {
     setErrors({});
 
     try {
-      await login(email.trim(), password);
-
       //OnBoarding por usuario unico
       const userIdentifier = email.trim().toLowerCase();
-      const storageKey = `@onboarding_${userIdentifier}`;
-      
-      const hasSeenOnboarding = await AsyncStorage.getItem(storageKey);
+      await AsyncStorage.setItem('@temp_user_id', userIdentifier);
 
-      if (hasSeenOnboarding === 'true') {
-        navigation.replace('Home');
-      } else {
-        // Pasamos el identificador a la pantalla de Onboarding mediante los parámetros
-        navigation.replace('Onboarding', { userId: userIdentifier });
-      }
+       await login(email.trim(), password);
     } catch (error) {
       setErrors({ general: getErrorMessage(error) });
     } finally {

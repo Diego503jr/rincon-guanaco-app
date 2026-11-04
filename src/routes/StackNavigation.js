@@ -9,6 +9,7 @@ import ProfileScreen from "../screens/ProfileScreen";
 import OnboardingScreen from "../screens/OnboardingScreen";
 import ExplorerDestinationsScreen from "../screens/ExplorerDestinationsScreen";
 import DestinationDetailScreen from "../screens/DestinationDetailScreen";
+import ReviewsScreen from "../screens/ReviewsScreen";
 
 const Stack = createNativeStackNavigator();
 
@@ -36,6 +37,7 @@ export default function StackNavigation() {
             <Stack.Screen name="Profile" component={ProfileScreen} />
             <Stack.Screen name="Onboarding" component={OnboardingScreen} />
             <Stack.Screen name="DestinationDetail" component={DestinationDetailScreen} />
+            <Stack.Screen name="Reviews" component={ReviewsScreen} />
           </>
         ) : (
           <>

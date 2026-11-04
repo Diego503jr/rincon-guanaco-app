@@ -5,8 +5,9 @@ import { useUser } from "../context/UserContext";
 
 import LoginScreen from "../screens/LoginScreen";
 import RegisterScreen from "../screens/RegisterScreen";
-import HomeScreen from "../screens/HomeScreen";
+import ProfileScreen from "../screens/ProfileScreen";
 import OnboardingScreen from "../screens/OnboardingScreen";
+import ExplorerDestinationsScreen from "../screens/ExplorerDestinationsScreen";
 
 const Stack = createNativeStackNavigator();
 
@@ -25,12 +26,13 @@ export default function StackNavigation() {
   return (
     <NavigationContainer>
       <Stack.Navigator
-        initialRouteName={isAuthenticated ? "Home" : "Login"}
+        initialRouteName={isAuthenticated ? "Explorer" : "Login"}
         screenOptions={{ headerShown: false }}
       >
         {isAuthenticated ? (
           <>
-            <Stack.Screen name="Home" component={HomeScreen} />
+            <Stack.Screen name="Explorer" component={ExplorerDestinationsScreen} />
+            <Stack.Screen name="Profile" component={ProfileScreen} />
             <Stack.Screen name="Onboarding" component={OnboardingScreen} />
           </>
         ) : (

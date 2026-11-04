@@ -7,7 +7,15 @@ export const ENDPOINTS = {
     logout: "/logout",
   },
   destinations: {
-    list: "/destinations",
+    list: "/admin/destinations",
+    detail: (id) => `/destinations/${id}`,
+  },
+  activities: {
+    list: "/admin/activities",
+    detail: (id) => `/destinations/${id}`,
+  },
+  accommodations: {
+    list: "/admin/accommodations",
     detail: (id) => `/destinations/${id}`,
   },
   reviews: {

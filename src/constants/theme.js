@@ -5,6 +5,8 @@ export const COLORS = {
   secondary: '#2A9D8F',  // Verde Palmera: badges, clima, iconos
   background: '#F8F9FA', // Blanco Hueso: fondo de pantallas
   text: '#212529',       // Gris Carbón: cuerpo de texto
+  btnCancelar: '#FF777A',
+
 
   // Auxiliares (no vienen en la guía, ajústalos si hace falta)
   white: '#FFFFFF',

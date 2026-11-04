@@ -9,6 +9,7 @@ export const ENDPOINTS = {
   destinations: {
     list: "/admin/destinations",
     detail: (id) => `/destinations/${id}`,
+    visitedDestinations: "/user/visited-destinations",
   },
   activities: {
     list: "/admin/activities",
@@ -21,6 +22,7 @@ export const ENDPOINTS = {
   reviews: {
     list: "/reviews",
     create: "/reviews",
+    report: "/reviews/report",
   },
   itineraries: {
     list: "/itineraries",

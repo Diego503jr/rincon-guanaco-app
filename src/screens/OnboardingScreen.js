@@ -7,6 +7,7 @@ import { COLORS, TYPOGRAPHY, SPACING, RADIUS, SHADOWS, SIZES, FONTS } from '../c
 
 const { width, height } = Dimensions.get('window');
 
+//Pantallas a mostrar en onboarding
 const slides = [
   {
     id: '1',
@@ -41,13 +42,14 @@ export default function OnboardingScreen({ navigation, route }) {
       // Guardamos la bandera específica para este usuario
       await AsyncStorage.setItem(storageKey, 'true');
       
-      navigation.replace('Home');
+      navigation.replace('Explorer');
     } catch (error) {
       console.error("Error guardando el estado:", error);
-      navigation.replace('Home');
+      navigation.replace('Explorer');
     }
   };
 
+  //Paginación con puntos
   const PaginationDots = () => (
     <View style={styles.pagination}>
       {slides.map((_, index) => (

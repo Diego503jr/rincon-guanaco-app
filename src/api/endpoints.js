@@ -27,5 +27,8 @@ export const ENDPOINTS = {
   itineraries: {
     list: "/itineraries",
     detail: (id) => `/itineraries/${id}`,
+    activities: (id) => `/itineraries/${id}/activities`,
+    activity: (id, itemId) => `/itineraries/${id}/activities/${itemId}`,
+    available: "/activities", // actividades activas para el modal (?destination_id=)
   },
 };

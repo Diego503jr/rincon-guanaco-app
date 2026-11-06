@@ -61,4 +61,25 @@ export const itineraryService = {
     const { data } = await api.delete(ENDPOINTS.itineraries.activity(id, itemId));
     return data;
   },
+  
+  // ===== Alojamientos del itinerario =====
+  // payload: { accommodation_id, check_in: "YYYY-MM-DD", check_out: "YYYY-MM-DD", guests }
+  addAccommodation: async (id, payload) => {
+    const { data } = await api.post(ENDPOINTS.itineraries.accommodations(id), payload);
+    return data;
+  },
+
+  // payload: { check_in?, check_out?, guests? }
+  updateAccommodation: async (id, itemId, payload) => {
+    const { data } = await api.patch(
+      ENDPOINTS.itineraries.accommodation(id, itemId),
+      payload,
+    );
+    return data;
+  },
+
+  removeAccommodation: async (id, itemId) => {
+    const { data } = await api.delete(ENDPOINTS.itineraries.accommodation(id, itemId));
+    return data;
+  },
 };

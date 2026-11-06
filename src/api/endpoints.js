@@ -24,11 +24,13 @@ export const ENDPOINTS = {
     create: "/reviews",
     report: "/reviews/report",
   },
-  itineraries: {
+    itineraries: {
     list: "/itineraries",
     detail: (id) => `/itineraries/${id}`,
     activities: (id) => `/itineraries/${id}/activities`,
     activity: (id, itemId) => `/itineraries/${id}/activities/${itemId}`,
     available: "/activities", // actividades activas para el modal (?destination_id=)
+    accommodations: (id) => `/itineraries/${id}/accommodations`,
+    accommodation: (id, itemId) => `/itineraries/${id}/accommodations/${itemId}`,
   },
 };

@@ -26,6 +26,7 @@ import { itineraryService } from "../api/services/itineraryService";
 import { getErrorMessage } from "../api/errors";
 import MainLayout from "../components/MainLayout";
 import ItineraryFormModal from "../components/ItineraryFormModal";
+import ItineraryDetailModal from "../components/ItineraryDetailModal";
 import { formatRange } from "../utils/dates";
 
 // Pantalla "Mi Itinerario" (Dev 4): lista de viajes del usuario.
@@ -42,6 +43,9 @@ export default function ItinerariesScreen() {
   const [form, setForm] = useState({ visible: false, mode: "create", item: null });
   const [saving, setSaving] = useState(false);
   const [formError, setFormError] = useState(null);
+
+  // Modal de detalle: { id, tab } del itinerario abierto
+  const [detail, setDetail] = useState(null);
 
   // Recarga la lista cada vez que la pantalla vuelve a mostrarse
   useFocusEffect(
@@ -123,7 +127,7 @@ export default function ItinerariesScreen() {
   const confirmDelete = (item) => {
     Alert.alert(
       "¿Eliminar itinerario?",
-      `Se eliminará "${item.title}" con todas sus actividades.`,
+      `Se eliminará "${item.title}" con todas sus actividades y alojamientos.`,
       [
         { text: "Cancelar", style: "cancel" },
         {
@@ -144,7 +148,11 @@ export default function ItinerariesScreen() {
 
   // ===== Tarjeta de cada itinerario =====
   const renderItem = ({ item }) => (
-    <View style={[styles.card, item.is_completed && styles.cardCompleted]}>
+    <TouchableOpacity
+      style={[styles.card, item.is_completed && styles.cardCompleted]}
+      onPress={() => setDetail({ id: item.id, tab })}
+      activeOpacity={0.85}
+    >
       {item.cover_image ? (
         <Image source={{ uri: item.cover_image }} style={styles.cardImage} />
       ) : (
@@ -172,8 +180,10 @@ export default function ItinerariesScreen() {
           {item.location ?? "Agrega actividades a tu viaje"}
         </Text>
         <Text style={styles.cardText}>
-          {item.activities_count} {item.activities_count === 1 ? "actividad" : "actividades"} · $
-          {Number(item.total_price).toFixed(2)}
+          {item.activities_count} {item.activities_count === 1 ? "actividad" : "actividades"}
+          {item.accommodations_count > 0 &&
+            ` · ${item.accommodations_count} ${item.accommodations_count === 1 ? "alojamiento" : "alojamientos"}`}
+          {` · $${Number(item.total_price).toFixed(2)}`}
         </Text>
 
         <View style={styles.cardActions}>
@@ -186,12 +196,21 @@ export default function ItinerariesScreen() {
           </TouchableOpacity>
         </View>
       </View>
-    </View>
+    </TouchableOpacity>
   );
 
   const renderEmpty = () => {
     if (loading) return <ActivityIndicator style={styles.empty} color={COLORS.primary} />;
     if (error) return <Text style={[styles.emptyText, { color: COLORS.accent }]}>{error}</Text>;
+    if (tab === "accommodations") {
+      return (
+        <View style={styles.empty}>
+          <Ionicons name="bed-outline" size={48} color={COLORS.textMuted} />
+          <Text style={styles.emptyText}>Aún no tienes viajes con alojamiento.</Text>
+          <Text style={styles.emptyText}>Reserva uno desde el detalle de un destino.</Text>
+        </View>
+      );
+    }
     return (
       <View style={styles.empty}>
         <Ionicons name="briefcase-outline" size={48} color={COLORS.textMuted} />
@@ -223,24 +242,21 @@ export default function ItinerariesScreen() {
         </TouchableOpacity>
       </View>
 
-      {tab === "activities" ? (
-        <FlatList
-          data={itineraries}
-          keyExtractor={(item) => String(item.id)}
-          renderItem={renderItem}
-          ListEmptyComponent={renderEmpty}
-          contentContainerStyle={styles.list}
-          refreshControl={
-            <RefreshControl refreshing={refreshing} onRefresh={onRefresh} colors={[COLORS.primary]} />
-          }
-        />
-      ) : (
-        // Las reservas de alojamiento son del módulo de Alojamientos (Dev 3)
-        <View style={styles.empty}>
-          <Ionicons name="bed-outline" size={48} color={COLORS.textMuted} />
-          <Text style={styles.emptyText}>Tus reservas de alojamiento aparecerán aquí.</Text>
-        </View>
-      )}
+      {/* Actividades: todos los viajes · Alojamiento: solo los viajes con alojamiento */}
+      <FlatList
+        data={
+          tab === "accommodations"
+            ? itineraries.filter((i) => i.accommodations_count > 0)
+            : itineraries
+        }
+        keyExtractor={(item) => String(item.id)}
+        renderItem={renderItem}
+        ListEmptyComponent={renderEmpty}
+        contentContainerStyle={styles.list}
+        refreshControl={
+          <RefreshControl refreshing={refreshing} onRefresh={onRefresh} colors={[COLORS.primary]} />
+        }
+      />
 
       {/* Botón flotante: nuevo itinerario */}
       {tab === "activities" && (
@@ -261,6 +277,14 @@ export default function ItinerariesScreen() {
         error={formError}
         onCancel={closeForm}
         onSubmit={submitForm}
+      />
+
+      {/* Detalle del itinerario (ver, editar, quitar y finalizar) */}
+      <ItineraryDetailModal
+        itineraryId={detail?.id ?? null}
+        initialTab={detail?.tab ?? "activities"}
+        onClose={() => setDetail(null)}
+        onChanged={execute}
       />
     </MainLayout>
   );

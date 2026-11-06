@@ -230,9 +230,11 @@ export default function SelectionsPanel({ suggestedTitle = "", onConfirmed }) {
       />
 
       {/* Ponerle nombre al viaje antes de guardarlo */}
-      <ItineraryFormModal
+        <ItineraryFormModal
         visible={naming}
         mode="create"
+        title="Confirmar Itinerario"
+        submitLabel="Confirmar"
         initialTitle={suggestedTitle}
         loading={saving}
         error={formError}

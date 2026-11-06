@@ -10,7 +10,14 @@ import {
   StyleSheet,
 } from "react-native";
 import { Ionicons } from "@expo/vector-icons";
-import { COLORS, FONTS, SIZES, SPACING, RADIUS, TYPOGRAPHY } from "../constants/theme";
+import {
+  COLORS,
+  FONTS,
+  SIZES,
+  SPACING,
+  RADIUS,
+  TYPOGRAPHY,
+} from "../constants/theme";
 
 // Color del botón "Cancelar" de los modales del Figma
 const CANCEL_COLOR = "#F47C7C";
@@ -20,6 +27,8 @@ export default function ItineraryFormModal({
   visible,
   initialTitle = "",
   mode = "create", // "create" | "edit"
+  title: customTitle = null, // opcional: título del modal
+  submitLabel: customLabel = null, // opcional: texto del botón principal
   loading = false,
   error = null,
   onCancel,
@@ -47,14 +56,25 @@ export default function ItineraryFormModal({
   const isEdit = mode === "edit";
 
   return (
-    <Modal visible={visible} transparent animationType="fade" onRequestClose={onCancel}>
+    <Modal
+      visible={visible}
+      transparent
+      animationType="fade"
+      onRequestClose={onCancel}
+    >
       <Pressable style={styles.overlay} onPress={onCancel}>
         <Pressable style={styles.card} onPress={() => {}}>
-          <TouchableOpacity style={styles.close} onPress={onCancel} hitSlop={10}>
+          <TouchableOpacity
+            style={styles.close}
+            onPress={onCancel}
+            hitSlop={10}
+          >
             <Ionicons name="close" size={22} color={COLORS.accent} />
           </TouchableOpacity>
 
-          <Text style={styles.title}>{isEdit ? "Editar Itinerario" : "Nuevo Itinerario"}</Text>
+          <Text style={styles.title}>
+            {customTitle ?? (isEdit ? "Editar Itinerario" : "Nuevo Itinerario")}
+          </Text>
 
           <Text style={styles.label}>Nombre del viaje</Text>
           <TextInput
@@ -71,7 +91,9 @@ export default function ItineraryFormModal({
             returnKeyType="done"
             onSubmitEditing={submit}
           />
-          {(localError || error) && <Text style={styles.errorText}>{localError || error}</Text>}
+          {(localError || error) && (
+            <Text style={styles.errorText}>{localError || error}</Text>
+          )}
 
           <View style={styles.actions}>
             <TouchableOpacity
@@ -83,14 +105,20 @@ export default function ItineraryFormModal({
             </TouchableOpacity>
 
             <TouchableOpacity
-              style={[styles.button, { backgroundColor: COLORS.accent }, loading && styles.disabled]}
+              style={[
+                styles.button,
+                { backgroundColor: COLORS.accent },
+                loading && styles.disabled,
+              ]}
               onPress={submit}
               disabled={loading}
             >
               {loading ? (
                 <ActivityIndicator color={COLORS.white} />
               ) : (
-                <Text style={TYPOGRAPHY.button}>{isEdit ? "Actualizar" : "Agregar"}</Text>
+                <Text style={TYPOGRAPHY.button}>
+                  {customLabel ?? (isEdit ? "Actualizar" : "Agregar")}
+                </Text>
               )}
             </TouchableOpacity>
           </View>
@@ -112,7 +140,12 @@ const styles = StyleSheet.create({
     borderRadius: RADIUS.lg,
     padding: SPACING.lg,
   },
-  close: { position: "absolute", top: SPACING.md, right: SPACING.md, zIndex: 1 },
+  close: {
+    position: "absolute",
+    top: SPACING.md,
+    right: SPACING.md,
+    zIndex: 1,
+  },
   title: {
     fontFamily: FONTS.heading,
     fontSize: SIZES.h2,
@@ -133,7 +166,11 @@ const styles = StyleSheet.create({
     color: COLORS.text,
   },
   inputError: { borderColor: COLORS.accent },
-  errorText: { ...TYPOGRAPHY.small, color: COLORS.accent, marginTop: SPACING.xs },
+  errorText: {
+    ...TYPOGRAPHY.small,
+    color: COLORS.accent,
+    marginTop: SPACING.xs,
+  },
   actions: {
     flexDirection: "row",
     justifyContent: "space-between",

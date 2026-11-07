@@ -1,11 +1,13 @@
-import React from 'react';
+import React, { useState } from 'react';
 import { View, Text, StyleSheet, SafeAreaView, TouchableOpacity, StatusBar } from 'react-native';
 import { Ionicons, MaterialCommunityIcons, FontAwesome5 } from '@expo/vector-icons';
 import { useNavigation, useRoute } from '@react-navigation/native';
+import SideMenu from './SideMenu';
 
 export default function MainLayout({ children, title = "Explora El Salvador" }) {
   const navigation = useNavigation();
   const route = useRoute();
+    const [menuOpen, setMenuOpen] = useState(false); // menú lateral
 
   // función para saber si la ruta está activa
   const isActive = (routeName) => route.name === routeName;
@@ -18,7 +20,7 @@ export default function MainLayout({ children, title = "Explora El Salvador" }) 
       
       {/* HEADER SUPERIOR */}
       <View style={styles.header}>
-        <TouchableOpacity onPress={() => {}} style={styles.headerIconContainer}>
+        <TouchableOpacity onPress={() => setMenuOpen(true)} style={styles.headerIconContainer}>
           <Ionicons name="menu" marginTop= {35} size={26} color="#FFFFFF" />
         </TouchableOpacity>
 
@@ -80,6 +82,7 @@ export default function MainLayout({ children, title = "Explora El Salvador" }) 
           />
         </TouchableOpacity>
       </View>
+      <SideMenu visible={menuOpen} onClose={() => setMenuOpen(false)} />
     </SafeAreaView>
   );
 }

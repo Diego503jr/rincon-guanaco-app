@@ -6,6 +6,10 @@ export const ENDPOINTS = {
     me: "/me",
     logout: "/logout",
   },
+    profile: {
+    update: "/me", 
+    password: "/me/password", 
+  },
   destinations: {
     list: "/admin/destinations",
     detail: (id) => `/destinations/${id}`,

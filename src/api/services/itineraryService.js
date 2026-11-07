@@ -35,13 +35,6 @@ export const itineraryService = {
   },
 
   // ===== Actividades del itinerario =====
-
-  // Actividades activas para elegir en el modal (params opcional: { destination_id })
-  getAvailableActivities: async (params) => {
-    const { data } = await api.get(ENDPOINTS.itineraries.available, { params });
-    return data;
-  },
-
   // payload: { activity_id, date_time: "YYYY-MM-DD HH:mm", people, title? }
   addActivity: async (id, payload) => {
     const { data } = await api.post(ENDPOINTS.itineraries.activities(id), payload);

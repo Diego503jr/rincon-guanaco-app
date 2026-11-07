@@ -132,7 +132,7 @@ export default function SelectionsPanel({ suggestedTitle = "", onConfirmed }) {
 
   return (
     <View>
-      <Text style={styles.heading}>Selecciones ({selections.length})</Text>
+            <Text style={styles.heading}>Revisa tu viaje antes de confirmar</Text>
 
       {selections.map((item) => {
         const isActivity = item.type === "activity";

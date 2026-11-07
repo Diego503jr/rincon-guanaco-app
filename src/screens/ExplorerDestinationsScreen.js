@@ -1,5 +1,15 @@
 import { useState, useEffect } from "react";
-import { View, Text, StyleSheet, FlatList, TextInput, TouchableOpacity, Image, ActivityIndicator, ScrollView,} from "react-native";
+import {
+  View,
+  Text,
+  StyleSheet,
+  FlatList,
+  TextInput,
+  TouchableOpacity,
+  Image,
+  ActivityIndicator,
+  ScrollView,
+} from "react-native";
 import useApi from "../hooks/useApi";
 import { Ionicons } from "@expo/vector-icons";
 import { destinationService } from "../api/services/destinationService";
@@ -56,14 +66,37 @@ export default function ExplorerDestinationsScreen({ navigation }) {
       />
       <View style={styles.cardInfo}>
         <View style={styles.cardHeaderRow}>
-          <Text style={styles.cardTitle}>{item.name}</Text>
+          <Text style={styles.cardTitle} numberOfLines={1}>
+            {item.name}
+          </Text>
         </View>
-        <Text style={styles.cardDescription} numberOfLines={3}>
+
+        {/* Badge de Categoría y Tipo de Viajero */}
+        <View style={styles.badgeRow}>
+          {item.category && (
+            <View style={styles.miniBadge}>
+              <Ionicons name="compass-outline" size={12} color="#2A9D8F" />
+              <Text style={styles.miniBadgeText}>{item.category}</Text>
+            </View>
+          )}
+          {item.traveler_type && (
+            <View style={[styles.miniBadge, { backgroundColor: "#EFF6FF" }]}>
+              <Ionicons name="people-outline" size={12} color="#3B82F6" />
+              <Text style={[styles.miniBadgeText, { color: "#3B82F6" }]}>
+                {item.traveler_type}
+              </Text>
+            </View>
+          )}
+        </View>
+
+        <Text style={styles.cardDescription} numberOfLines={2}>
           {item.description}
         </Text>
 
-        <TouchableOpacity style={styles.reviewButton}>
-          <Text style={styles.reviewButtonText}>Ver reseñas</Text>
+        <TouchableOpacity style={styles.reviewButton}
+        onPress={() => navigation.navigate("Reviews", { destination: item })}
+        >
+          <Text style={styles.reviewButtonText}>Reseñas</Text>
         </TouchableOpacity>
       </View>
     </TouchableOpacity>
@@ -268,5 +301,26 @@ const styles = StyleSheet.create({
   errorText: {
     color: "#DC2626",
     textAlign: "center",
+  },
+  badgeRow: {
+    flexDirection: "row",
+    flexWrap: "wrap",
+    marginVertical: 4,
+  },
+  miniBadge: {
+    flexDirection: "row",
+    alignItems: "center",
+    backgroundColor: "#E2F9F1",
+    paddingHorizontal: 6,
+    paddingVertical: 2,
+    borderRadius: 6,
+    marginRight: 6,
+    marginBottom: 4,
+  },
+  miniBadgeText: {
+    fontSize: 10,
+    fontWeight: "600",
+    color: "#2A9D8F",
+    marginLeft: 3,
   },
 });

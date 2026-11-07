@@ -94,7 +94,6 @@ export default function DestinationDetailScreen({ route, navigation }) {
           );
           setItemsList(data?.data ?? data ?? []);
         } else if (activeTab === "selecciones") {
-          // Lógica o servicio para cuando haya selecciones
           setItemsList([]);
         }
       } catch (error) {
@@ -121,7 +120,7 @@ export default function DestinationDetailScreen({ route, navigation }) {
 
   return (
     <View style={styles.mainContainer}>
-      {/* BARRA SUPERIOR AZUL CORPORATIVA */}
+      {/* BARRA SUPERIOR AZUL */}
       <View style={styles.topBar}>
         <TouchableOpacity
           style={styles.backButton}
@@ -279,61 +278,97 @@ export default function DestinationDetailScreen({ route, navigation }) {
         ) : (
           itemsList.map((item) => {
             const isActivity = activeTab === "actividades";
+            const isAccommodation = activeTab === "alojamiento";
+
+            const handleItemPress = () => {
+              if (isAccommodation) {
+                navigation.navigate("AccommodationModal", {
+                  accommodation: item,
+                  destination,
+                });
+              } else if (isActivity) {
+                navigation.navigate("ActivityModal", {
+                  activity: item,
+                  destination,
+                });
+              }
+            };
 
             return (
-              <View
+              <TouchableOpacity
                 key={item.id}
+                activeOpacity={0.8}
+                onPress={handleItemPress}
                 style={isActivity ? styles.activityCard : styles.itemCard}
               >
-                {/* SI ES ALOJAMIENTO MUESTRA IMAGEN */}
-                {!isActivity && (
+                {isAccommodation && item.image_url ? (
                   <Image
-                    source={{ uri: item.image_url || destination?.image_url }}
+                    source={{ uri: item.image_url }}
                     style={styles.itemImage}
                   />
-                )}
+                ) : null}
 
                 <View style={styles.itemContent}>
                   <View style={styles.cardHeaderRow}>
-                    <Text style={styles.itemTitle}>
-                      {item.name || item.activity_name}
-                    </Text>
+                    <Text style={styles.itemTitle}>{item.name}</Text>
 
-                    {/* PRECIO DESTACADO EN ACTIVIDADES */}
-                    {isActivity && item.price !== undefined && (
+                    {item.price !== undefined && (
                       <Text style={styles.activityPrice}>
                         ${Number(item.price).toFixed(2)}
+                        {isAccommodation && (
+                          <Text style={styles.nightText}> / noche</Text>
+                        )}
                       </Text>
                     )}
                   </View>
 
                   <Text style={styles.itemDescription} numberOfLines={2}>
-                    {item.notes ||
-                      item.address ||
-                      item.description ||
-                      "Sin notas adicionales."}
+                    {item.address || item.description || "Sin descripción."}
                   </Text>
 
-                  {/* METADATOS EXTRAS DE ACTIVIDADES (Personas y Duración) */}
-                  {isActivity && (
-                    <View style={styles.activityMetaRow}>
-                      <View style={styles.metaBadge}>
-                        <Ionicons name="people-outline" size={14} color="#2A9D8F" />
-                        <Text style={styles.metaText}>
-                          {item.people || 1} pers.
-                        </Text>
-                      </View>
+                  {isAccommodation && (
+                    <View style={styles.accommodationMetaContainer}>
+                      {(item.check_in || item.check_out) && (
+                        <View style={styles.metaRow}>
+                          <Ionicons
+                            name="time-outline"
+                            size={13}
+                            color="#6B7280"
+                          />
+                          <Text style={styles.metaText}>
+                            Entrada:{" "}
+                            {item.check_in
+                              ? item.check_in.substring(0, 5)
+                              : "--"}{" "}
+                            | Salida:{" "}
+                            {item.check_out
+                              ? item.check_out.substring(0, 5)
+                              : "--"}
+                          </Text>
+                        </View>
+                      )}
 
-                      <View style={styles.metaBadge}>
-                        <Ionicons name="time-outline" size={14} color="#2A9D8F" />
-                        <Text style={styles.metaText}>
-                          {item.duracion || "N/D"}
-                        </Text>
-                      </View>
+                      {item.contact_phone && (
+                        <View style={styles.metaRow}>
+                          <Ionicons
+                            name="call-outline"
+                            size={13}
+                            color="#2A9D8F"
+                          />
+                          <Text
+                            style={[
+                              styles.metaText,
+                              { color: "#2A9D8F", fontWeight: "600" },
+                            ]}
+                          >
+                            {item.contact_phone}
+                          </Text>
+                        </View>
+                      )}
                     </View>
                   )}
                 </View>
-              </View>
+              </TouchableOpacity>
             );
           })
         )}
@@ -547,20 +582,6 @@ const styles = StyleSheet.create({
     fontWeight: "bold",
     color: "#2A9D8F",
   },
-  activityMetaRow: {
-    flexDirection: "row",
-    marginTop: 10,
-    alignItems: "center",
-  },
-  metaBadge: {
-    flexDirection: "row",
-    alignItems: "center",
-    backgroundColor: "#F3F4F6",
-    paddingVertical: 4,
-    paddingHorizontal: 8,
-    borderRadius: 8,
-    marginRight: 10,
-  },
   metaText: {
     fontSize: 12,
     color: "#4B5563",
@@ -572,5 +593,21 @@ const styles = StyleSheet.create({
     color: "#6B7280",
     marginVertical: 20,
     fontSize: 14,
+  },
+  nightText: {
+    fontSize: 11,
+    fontWeight: "normal",
+    color: "#6B7280",
+  },
+  accommodationMetaContainer: {
+    marginTop: 8,
+    borderTopWidth: 1,
+    borderTopColor: "#F3F4F6",
+    paddingTop: 6,
+  },
+  metaRow: {
+    flexDirection: "row",
+    alignItems: "center",
+    marginTop: 3,
   },
 });

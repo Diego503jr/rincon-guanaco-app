@@ -18,6 +18,8 @@ import {
 } from "@expo/vector-icons";
 import { activityService } from "../api/services/activityService";
 import { accommodationService } from "../api/services/accommodationService";
+import SelectionsPanel from "../components/SelectionsPanel";
+import { useSelections } from "../store/selectionStore";
 
 export default function DestinationDetailScreen({ route, navigation }) {
   const { destination } = route.params || {};
@@ -25,6 +27,14 @@ export default function DestinationDetailScreen({ route, navigation }) {
 
   // Estado que controla si hay una selección previa para desbloquear el tercer tab
   const [hasSelection, setHasSelection] = useState(false);
+
+  // Selecciones: la pestaña se habilita cuando hay algo seleccionado
+  const selections = useSelections();
+  useEffect(() => {
+    setHasSelection(selections.length > 0);
+    if (selections.length === 0 && activeTab === "selecciones")
+      setActiveTab("actividades");
+  }, [selections.length]);
 
   // Estados para el clima real
   const [weather, setWeather] = useState(null);
@@ -259,13 +269,17 @@ export default function DestinationDetailScreen({ route, navigation }) {
                 !hasSelection && styles.tabTextDisabled,
               ]}
             >
-              Selecciones
+              Selecciones{selections.length ? ` (${selections.length})` : ""}
             </Text>
           </TouchableOpacity>
         </View>
 
         {/* LISTA DINÁMICA DE ELEMENTOS */}
-        {loadingItems ? (
+        {activeTab === "selecciones" ? (
+          <SelectionsPanel
+            suggestedTitle={`Viaje a ${destination?.name ?? ""}`}
+          />
+        ) : loadingItems ? (
           <ActivityIndicator
             size="large"
             color="#0D2A4D"

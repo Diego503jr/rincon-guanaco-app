@@ -3,11 +3,13 @@ import { View, Text, StyleSheet, SafeAreaView, TouchableOpacity, StatusBar } fro
 import { Ionicons, MaterialCommunityIcons, FontAwesome5 } from '@expo/vector-icons';
 import { useNavigation, useRoute } from '@react-navigation/native';
 import SideMenu from './SideMenu';
+import AboutModal from './AboutModal';
 
 export default function MainLayout({ children, title = "Explora El Salvador" }) {
   const navigation = useNavigation();
   const route = useRoute();
-    const [menuOpen, setMenuOpen] = useState(false); // menú lateral
+  const [menuOpen, setMenuOpen] = useState(false); // menú lateral
+  const [aboutVisible, setAboutVisible] = useState(false);
 
   // función para saber si la ruta está activa
   const isActive = (routeName) => route.name === routeName;
@@ -82,7 +84,17 @@ export default function MainLayout({ children, title = "Explora El Salvador" }) 
           />
         </TouchableOpacity>
       </View>
-      <SideMenu visible={menuOpen} onClose={() => setMenuOpen(false)} />
+      <SideMenu 
+        visible={menuOpen} 
+        onClose={() => setMenuOpen(false)} 
+        onOpenAbout={() => setAboutVisible(true)} 
+      />
+
+      {/* Modal "Acerca de" independiente y seguro */}
+      <AboutModal 
+        visible={aboutVisible} 
+        onClose={() => setAboutVisible(false)} 
+      />
     </SafeAreaView>
   );
 }

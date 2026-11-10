@@ -14,6 +14,7 @@ import ItinerariesScreen from "../screens/ItinerariesScreen";
 import ActivityReserveScreen from "../screens/ActivityReserveScreen";
 import AccommodationReserveScreen from "../screens/AccommodationReserveScreen";
 import EditProfileScreen from "../screens/EditProfileScreen";
+import SupportScreen from '..//screens/SupportScreen';
 
 const Stack = createNativeStackNavigator();
 
@@ -46,6 +47,11 @@ export default function StackNavigation() {
             <Stack.Screen name="ActivityModal" component={ActivityReserveScreen} />
             <Stack.Screen name="AccommodationModal" component={AccommodationReserveScreen} />
             <Stack.Screen name="EditProfile" component={EditProfileScreen} />
+            <Stack.Screen
+              name="Support"
+              component={SupportScreen}
+              options={{ headerShown: false }}
+            />
           </>
         ) : (
           <>

@@ -17,7 +17,6 @@ import { useUser } from "../context/UserContext";
 
 const WIDTH = Math.min(300, Dimensions.get("window").width * 0.8);
 
-// "Carlos Mendoza" -> "CM"
 const initials = (name = "") =>
   name
     .trim()
@@ -26,15 +25,12 @@ const initials = (name = "") =>
     .map((p) => p[0]?.toUpperCase() ?? "")
     .join("") || "?";
 
-// Menú lateral (botón ☰ del encabezado).
-// Reúne la navegación principal + opciones que no caben en la barra inferior.
-export default function SideMenu({ visible, onClose }) {
+export default function SideMenu({ visible, onClose, onOpenAbout }) {
   const navigation = useNavigation();
   const route = useRoute();
   const { user, logout } = useUser();
   const slide = useRef(new Animated.Value(-WIDTH)).current;
 
-  // Animación: entra desde la izquierda
   useEffect(() => {
     if (visible) {
       slide.setValue(-WIDTH);
@@ -47,22 +43,6 @@ export default function SideMenu({ visible, onClose }) {
     if (route.name !== screen) navigation.navigate(screen);
   };
 
-  const showAbout = () => {
-    onClose();
-    Alert.alert(
-      "Rincón Guanaco",
-      "Descubre los destinos de El Salvador, reserva actividades y alojamientos, y arma tu propio itinerario.\n\nVersión 1.0 · ITCA-FEPADE",
-    );
-  };
-
-  const showHelp = () => {
-    onClose();
-    Alert.alert(
-      "Ayuda",
-      "1. Explora un destino y toca una actividad o un alojamiento.\n2. Elige fecha y personas, y toca Agregar.\n3. En la pestaña Selecciones toca \"Confirmar Itinerario\".\n4. Revisa tus viajes en Mi Itinerario.",
-    );
-  };
-
   const confirmLogout = () => {
     onClose();
     Alert.alert("Cerrar sesión", "¿Seguro que deseas salir de tu cuenta?", [
@@ -71,23 +51,30 @@ export default function SideMenu({ visible, onClose }) {
     ]);
   };
 
-  const mainItems = [
-    { icon: "search", label: "Explorar destinos", screen: "Explorer" },
-    { icon: "briefcase-outline", label: "Mi Itinerario", screen: "Itineraries" },
-    { icon: "chatbubble-ellipses-outline", label: "Reseñas", screen: "Reviews" },
-    { icon: "person-outline", label: "Mi Perfil", screen: "Profile" },
-  ];
-
   const extraItems = [
-    { icon: "help-circle-outline", label: "¿Cómo reservar?", onPress: showHelp },
-    { icon: "information-circle-outline", label: "Acerca de", onPress: showAbout },
+    {
+      icon: "help-buoy-outline",
+      label: "Soporte y Ayuda",
+      onPress: () => {
+        onClose();
+        navigation.navigate("Support");
+      }
+    },
+    {
+      icon: "information-circle-outline",
+      label: "Acerca de",
+      onPress: () => {
+        onClose(); // Obligatorio cerrar el menú lateral primero
+        if (onOpenAbout) onOpenAbout(); // Luego abrimos la tarjeta
+      }
+    },
   ];
 
   return (
     <Modal visible={visible} transparent animationType="fade" onRequestClose={onClose}>
       <Pressable style={styles.overlay} onPress={onClose}>
         <Animated.View style={[styles.panel, { transform: [{ translateX: slide }] }]}>
-          <Pressable style={{ flex: 1 }} onPress={() => {}}>
+          <Pressable style={{ flex: 1 }} onPress={() => { }}>
             {/* Encabezado con el usuario */}
             <View style={styles.header}>
               <View style={styles.avatar}>
@@ -96,25 +83,6 @@ export default function SideMenu({ visible, onClose }) {
               <Text style={styles.name} numberOfLines={1}>{user?.name}</Text>
               <Text style={styles.email} numberOfLines={1}>{user?.email}</Text>
             </View>
-
-            {/* Navegación principal */}
-            <View style={styles.section}>
-              {mainItems.map((item) => {
-                const active = route.name === item.screen;
-                return (
-                  <TouchableOpacity
-                    key={item.screen}
-                    style={[styles.item, active && styles.itemActive]}
-                    onPress={() => go(item.screen)}
-                  >
-                    <Ionicons name={item.icon} size={20} color={active ? COLORS.accent : COLORS.primary} />
-                    <Text style={[styles.itemText, active && styles.itemTextActive]}>{item.label}</Text>
-                  </TouchableOpacity>
-                );
-              })}
-            </View>
-
-            <View style={styles.divider} />
 
             {/* Información */}
             <View style={styles.section}>

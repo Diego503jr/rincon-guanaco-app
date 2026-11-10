@@ -1,20 +1,25 @@
 import React, { useState, useEffect } from 'react';
+import { useRoute } from '@react-navigation/native';
 import { View, StyleSheet, FlatList, TextInput, TouchableOpacity, ActivityIndicator, Text } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
 import MainLayout from '../components/MainLayout';
 import ReviewCard from '../components/ReviewCard';
 import { getReviews } from '../api/services/reviewsService';
-import { COLORS, SPACING, RADIUS, SHADOWS } from '../constants/theme';
+import { COLORS, SPACING, RADIUS, SHADOWS, FONTS } from '../constants/theme';
 import CreateReviewModal from '../components/CreateReviewModal';
 import { postReview } from '../api/services/reviewsService';
 import ReportReviewModal from '../components/ReportReviewModal';
 
 export default function ReviewsScreen() {
+    const route = useRoute();
+
+    const destinationParam = route.params?.destination?.name || '';
+
     const [reviews, setReviews] = useState([]);
     const [loading, setLoading] = useState(true);
 
     // Texto escrito en tiempo real en la barra de búsqueda
-    const [inputText, setInputText] = useState('');
+    const [inputText, setInputText] = useState(destinationParam);
 
     // Consulta de búsqueda confirmada (aplicada con retraso)
     const [searchQuery, setSearchQuery] = useState('');
@@ -28,11 +33,11 @@ export default function ReviewsScreen() {
     const handleCreateReview = async (reviewData) => {
         try {
             await postReview(reviewData);
-            setModalVisible(false);
-            fetchReviews();
-            alert("¡Reseña publicada con éxito!");
+            fetchReviews(); // Actualiza la lista en segundo plano de manera limpia
         } catch (error) {
-            alert("Error: " + JSON.stringify(error.response?.data?.errors || error.message));
+            console.log("Error al crear reseña:", error.response?.data);
+            alert("Hubo un error al publicar tu reseña.");
+            throw error; // Evita que avance a la pantalla de éxito si falla la API
         }
     };
 
@@ -92,18 +97,30 @@ export default function ReviewsScreen() {
                     <FlatList
                         data={reviews}
                         keyExtractor={(item, index) => item.id ? item.id.toString() : index.toString()}
-                        // Pasamos la función onReportPress a cada ReviewCard
                         renderItem={({ item }) => (
                             <ReviewCard review={item} onReportPress={handleOpenReport} />
                         )}
                         contentContainerStyle={styles.listContainer}
                         showsVerticalScrollIndicator={false}
                         ListEmptyComponent={
-                            <Text style={styles.emptyText}>
-                                {inputText.length > 0
-                                    ? 'No se encontraron reseñas para tu búsqueda.'
-                                    : 'Aún no hay reseñas disponibles.'}
-                            </Text>
+                            <View style={styles.emptyContainer}>
+                                <Text style={styles.emptyText}>
+                                    {inputText.length > 0
+                                        ? 'No se encontraron reseñas para tu búsqueda.'
+                                        : 'Aún no hay reseñas disponibles.'}
+                                </Text>
+
+                                {/* Botón para limpiar filtro cuando hay texto escrito */}
+                                {inputText.length > 0 && (
+                                    <TouchableOpacity
+                                        style={styles.clearFilterButton}
+                                        onPress={() => setInputText('')}
+                                    >
+                                        <Ionicons name="close-circle-outline" size={18} color={COLORS.white} style={{ marginRight: 6 }} />
+                                        <Text style={styles.clearFilterText}>Limpiar filtro</Text>
+                                    </TouchableOpacity>
+                                )}
+                            </View>
                         }
                     />
                 )}
@@ -121,7 +138,7 @@ export default function ReviewsScreen() {
                 <CreateReviewModal
                     visible={modalVisible}
                     onClose={() => setModalVisible(false)}
-                    onSubmit={handleCreateReview}
+                    onSuccess={handleCreateReview}
                 />
 
                 {/* Modal para Reportar Reseña */}
@@ -184,5 +201,31 @@ const styles = StyleSheet.create({
         ...SHADOWS.card,
         zIndex: 999,
         elevation: 10,
+    },
+    emptyContainer: {
+        alignItems: 'center',
+        marginTop: 50,
+        paddingHorizontal: SPACING.lg,
+    },
+    emptyText: {
+        textAlign: 'center',
+        color: COLORS.textMuted,
+        fontSize: 15,
+        marginBottom: SPACING.md,
+    },
+    clearFilterButton: {
+        flexDirection: 'row',
+        alignItems: 'center',
+        backgroundColor: COLORS.primary,
+        paddingVertical: 10,
+        paddingHorizontal: SPACING.lg,
+        borderRadius: RADIUS.pill,
+        ...SHADOWS.card,
+    },
+    clearFilterText: {
+        color: COLORS.white,
+        fontFamily: FONTS.heading,
+        fontSize: 14,
+        fontWeight: 'bold',
     }
 });

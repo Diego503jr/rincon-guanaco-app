@@ -1,41 +1,35 @@
-// src/components/CreateReviewModal.js
-import { useState, useEffect } from 'react';
-import {
-  View,
-  Text, Modal,
-  StyleSheet, TextInput,
-  TouchableOpacity, ActivityIndicator,
-  Platform, Keyboard,
-  TouchableWithoutFeedback
-} from 'react-native';
+import React, { useState, useEffect } from 'react';
+import { View, Text, Modal, StyleSheet, TextInput, TouchableOpacity, ActivityIndicator, Keyboard, TouchableWithoutFeedback } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
-import { COLORS, TYPOGRAPHY, SPACING, RADIUS, FONTS } from '../constants/theme';
-import { getVisitedDestinations } from '../api/services/reviewsService';
 import DropDownPicker from 'react-native-dropdown-picker';
+import { COLORS, SPACING, RADIUS, FONTS } from '../constants/theme';
+import { getVisitedDestinations } from '../api/services/reviewsService';
 
-export default function CreateReviewModal({ visible, onClose, onSubmit }) {
-
+export default function CreateReviewModal({ visible, onClose, onSuccess }) {
   const [rating, setRating] = useState(0);
   const [comment, setComment] = useState('');
+  
+  // Estados para el Dropdown
   const [open, setOpen] = useState(false);
   const [selectedDestination, setSelectedDestination] = useState(null);
   const [items, setItems] = useState([]);
   const [loadingDestinations, setLoadingDestinations] = useState(true);
 
-  // Obtener la fecha actual en formato local (ej: 03/11/2026)
+  // Estado para controlar los pasos: 'form' (crear) o 'success' (tarjeta de éxito)
+  const [step, setStep] = useState('form');
+
   const currentDate = new Date().toLocaleDateString('es-ES');
 
-  // Reinicia los campos y carga los destinos al abrir el modal
   useEffect(() => {
     if (visible) {
+      setStep('form'); 
       fetchDestinations();
       setRating(0);
       setComment('');
-      setSelectedDestination('');
+      setSelectedDestination(null);
     }
   }, [visible]);
 
-  // Obtiene los destinos visitados desde la API y los formatea para el selector
   const fetchDestinations = async () => {
     setLoadingDestinations(true);
     try {
@@ -45,7 +39,7 @@ export default function CreateReviewModal({ visible, onClose, onSubmit }) {
         value: dest.id.toString()
       }));
       setItems(formattedItems);
-
+      
       if (formattedItems.length > 0) {
         setSelectedDestination(formattedItems[0].value);
       }
@@ -56,16 +50,15 @@ export default function CreateReviewModal({ visible, onClose, onSubmit }) {
     }
   };
 
-  // Renderiza las estrellas interactivas de calificación
   const renderStars = () => {
     return (
       <View style={styles.starsContainer}>
         {[1, 2, 3, 4, 5].map((star) => (
           <TouchableOpacity key={star} onPress={() => setRating(star)}>
-            <Ionicons
-              name="star"
-              size={36}
-              color={star <= rating ? COLORS.secondary : '#D1D5DB'}
+            <Ionicons 
+              name="star" 
+              size={36} 
+              color={star <= rating ? COLORS.secondary : '#D1D5DB'} 
               style={styles.starIcon}
             />
           </TouchableOpacity>
@@ -74,18 +67,14 @@ export default function CreateReviewModal({ visible, onClose, onSubmit }) {
     );
   };
 
-  // Valida los campos y envía la reseña con la fecha actual formateada (YYYY-MM-DD)
-  const handleSubmit = () => {
+  const handleSubmit = async () => {
     if (rating === 0 || !selectedDestination || comment.trim() === '') {
       alert("Por favor completa todos los campos.");
       return;
     }
 
     const today = new Date();
-    const year = today.getFullYear();
-    const month = String(today.getMonth() + 1).padStart(2, '0');
-    const day = String(today.getDate()).padStart(2, '0');
-    const formattedDate = `${year}-${month}-${day}`;
+    const formattedDate = `${today.getFullYear()}-${String(today.getMonth() + 1).padStart(2, '0')}-${String(today.getDate()).padStart(2, '0')}`;
 
     const reviewData = {
       destination_id: parseInt(selectedDestination),
@@ -94,7 +83,16 @@ export default function CreateReviewModal({ visible, onClose, onSubmit }) {
       travel_date: formattedDate,
     };
 
-    onSubmit(reviewData);
+    try {
+      await onSuccess(reviewData);
+      setStep('success');
+    } catch (error) {
+    }
+  };
+
+  const handleCloseAll = () => {
+    setStep('form');
+    onClose();
   };
 
   return (
@@ -102,91 +100,106 @@ export default function CreateReviewModal({ visible, onClose, onSubmit }) {
       visible={visible}
       transparent={true}
       animationType="fade"
-      onRequestClose={onClose}
+      onRequestClose={handleCloseAll}
     >
-      {/* Al tocar fuera del contenido del modal o en espacios libres, se oculta el teclado */}
       <TouchableWithoutFeedback onPress={Keyboard.dismiss}>
         <View style={styles.overlay}>
-          <View style={styles.modalContainer}>
+          {step === 'form' ? (
+            // --- FORMULARIO DE RESEÑA ---
+            <View style={styles.modalContainer}>
+              <Text style={styles.title}>Reseña</Text>
+              
+              {renderStars()}
 
-            <Text style={styles.title}>Reseña</Text>
+              {/* Selector de Destinos */}
+              <View style={styles.fieldContainer}>
+                <Text style={styles.label}>Destino:</Text>
+                {loadingDestinations ? (
+                  <ActivityIndicator size="small" color={COLORS.secondary} />
+                ) : items.length === 0 ? (
+                   <Text style={styles.emptyText}>No tienes destinos visitados aún.</Text>
+                ) : (
+                  <DropDownPicker
+                    open={open}
+                    value={selectedDestination}
+                    items={items}
+                    setOpen={setOpen}
+                    setValue={setSelectedDestination}
+                    setItems={setItems}
+                    listMode="SCROLLVIEW"
+                    placeholder="Selecciona un destino"
+                    style={{
+                      backgroundColor: '#E5E7EB',
+                      borderWidth: 0,
+                      borderRadius: RADIUS.md,
+                      height: 50,
+                    }}
+                    dropDownContainerStyle={{
+                      backgroundColor: '#E5E7EB',
+                      borderWidth: 0,
+                      borderRadius: RADIUS.md,
+                    }}
+                    textStyle={{
+                      fontSize: 16,
+                      color: COLORS.text,
+                    }}
+                    zIndex={3000}
+                    zIndexInverse={1000}
+                  />
+                )}
+              </View>
 
-            {renderStars()}
+              {/* Fecha Actual */}
+              <View style={[styles.fieldContainer, styles.dateContainer]}>
+                <Ionicons name="calendar-outline" size={20} color={COLORS.secondary} />
+                <Text style={styles.dateText}>Fecha: {currentDate}</Text>
+              </View>
 
-            {/* Selector de Destinos */}
-            <View style={styles.fieldContainer}>
-              <Text style={styles.label}>Destino:</Text>
-              {loadingDestinations ? (
-                <ActivityIndicator size="small" color={COLORS.secondary} />
-              ) : items.length === 0 ? (
-                <Text style={styles.emptyText}>No tienes destinos visitados aún.</Text>
-              ) : (
-                <DropDownPicker
-                  open={open}
-                  value={selectedDestination}
-                  items={items}
-                  setOpen={setOpen}
-                  setValue={setSelectedDestination}
-                  setItems={setItems}
-                  listMode="SCROLLVIEW"
-                  placeholder="Selecciona un destino"
-                  style={{
-                    backgroundColor: '#E5E7EB',
-                    borderWidth: 0,
-                    borderRadius: RADIUS.md,
-                    height: 50,
-                  }}
-                  dropDownContainerStyle={{
-                    backgroundColor: '#E5E7EB',
-                    borderWidth: 0,
-                    borderRadius: RADIUS.md,
-                  }}
-                  textStyle={{
-                    fontSize: 16,
-                    color: COLORS.text,
-                  }}
-                  zIndex={3000}
-                  zIndexInverse={1000}
+              {/* Comentario */}
+              <View style={styles.fieldContainer}>
+                <Text style={styles.label}>Comentario:</Text>
+                <TextInput
+                  style={styles.textArea}
+                  multiline
+                  numberOfLines={4}
+                  value={comment}
+                  onChangeText={setComment}
+                  placeholder="Escribe tu experiencia aquí..."
+                  placeholderTextColor={COLORS.textMuted}
+                  textAlignVertical="top"
                 />
-              )}
-            </View>
+              </View>
 
-            {/* Fecha Actual (solo lectura) */}
-            <View style={[styles.fieldContainer, styles.dateContainer]}>
-              <Ionicons name="calendar-outline" size={20} color={COLORS.secondary} />
-              <Text style={styles.dateText}>Fecha: {currentDate}</Text>
+              {/* Botones */}
+              <View style={styles.buttonsContainer}>
+                <TouchableOpacity style={styles.cancelButton} onPress={() => { Keyboard.dismiss(); handleCloseAll(); }}>
+                  <Text style={styles.cancelText}>Cancelar</Text>
+                </TouchableOpacity>
+                <TouchableOpacity 
+                  style={[styles.submitButton, (!selectedDestination || rating === 0) && styles.disabledButton]} 
+                  onPress={() => { Keyboard.dismiss(); handleSubmit(); }}
+                  disabled={!selectedDestination || rating === 0}
+                >
+                  <Text style={styles.submitText}>Agregar</Text>
+                </TouchableOpacity>
+              </View>
             </View>
+          ) : (
+            // --- TARJETA DE CONFIRMACIÓN DE ÉXITO ---
+            <View style={styles.modalContainer}>
+              <Text style={styles.title}>¡Reseña Registrada!</Text>
+              
+              <View style={styles.successBox}>
+                <Text style={styles.successText}>
+                  Gracias, tu reseña se ha registrado exitosamente.
+                </Text>
+              </View>
 
-            {/* Comentario */}
-            <View style={styles.fieldContainer}>
-              <Text style={styles.label}>Comentario:</Text>
-              <TextInput
-                style={styles.textArea}
-                multiline
-                numberOfLines={4}
-                value={comment}
-                onChangeText={setComment}
-                placeholder="Escribe tu experiencia aquí..."
-                placeholderTextColor={COLORS.textMuted}
-                textAlignVertical="top"
-              />
-            </View>
-
-            {/* Botones */}
-            <View style={styles.buttonsContainer}>
-              <TouchableOpacity style={styles.cancelButton} onPress={() => { Keyboard.dismiss(); onClose(); }}>
-                <Text style={styles.cancelText}>Cancelar</Text>
-              </TouchableOpacity>
-              <TouchableOpacity
-                style={[styles.submitButton, (!selectedDestination || rating === 0) && styles.disabledButton]}
-                onPress={() => { Keyboard.dismiss(); handleSubmit(); }}
-                disabled={!selectedDestination || rating === 0}
-              >
-                <Text style={styles.submitText}>Agregar</Text>
+              <TouchableOpacity style={styles.acceptButton} onPress={handleCloseAll}>
+                <Text style={styles.acceptText}>Aceptar</Text>
               </TouchableOpacity>
             </View>
-
-          </View>
+          )}
         </View>
       </TouchableWithoutFeedback>
     </Modal>
@@ -196,7 +209,7 @@ export default function CreateReviewModal({ visible, onClose, onSubmit }) {
 const styles = StyleSheet.create({
   overlay: {
     flex: 1,
-    backgroundColor: 'rgba(33, 37, 41, 0.8)', // Fondo oscuro semitransparente
+    backgroundColor: 'rgba(33, 37, 41, 0.8)',
     justifyContent: 'center',
     alignItems: 'center',
     padding: SPACING.lg,
@@ -261,9 +274,8 @@ const styles = StyleSheet.create({
     marginTop: SPACING.md,
   },
   cancelButton: {
-    backgroundColor: COLORS.btnCancelar,
+    backgroundColor: '#FF7675',
     paddingVertical: 12,
-    paddingHorizontal: 24,
     borderRadius: RADIUS.md,
     flex: 0.48,
     alignItems: 'center',
@@ -275,9 +287,8 @@ const styles = StyleSheet.create({
     fontWeight: 'bold',
   },
   submitButton: {
-    backgroundColor: COLORS.accent, 
+    backgroundColor: COLORS.accent,
     paddingVertical: 12,
-    paddingHorizontal: 24,
     borderRadius: RADIUS.md,
     flex: 0.48,
     alignItems: 'center',
@@ -286,6 +297,34 @@ const styles = StyleSheet.create({
     opacity: 0.5,
   },
   submitText: {
+    color: COLORS.white,
+    fontFamily: FONTS.heading,
+    fontSize: 16,
+    fontWeight: 'bold',
+  },
+  successBox: {
+    backgroundColor: '#F9FAFB',
+    borderWidth: 1,
+    borderColor: '#E5E7EB',
+    borderRadius: RADIUS.md,
+    padding: SPACING.lg,
+    marginBottom: SPACING.xl,
+    alignItems: 'center',
+  },
+  successText: {
+    fontFamily: FONTS.body,
+    fontSize: 15,
+    color: COLORS.text,
+    textAlign: 'center',
+    lineHeight: 22,
+  },
+  acceptButton: {
+    backgroundColor: COLORS.accent,
+    paddingVertical: 12,
+    borderRadius: RADIUS.md,
+    alignItems: 'center',
+  },
+  acceptText: {
     color: COLORS.white,
     fontFamily: FONTS.heading,
     fontSize: 16,

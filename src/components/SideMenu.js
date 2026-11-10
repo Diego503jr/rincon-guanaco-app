@@ -16,6 +16,7 @@ import { FONTS, SIZES, SPACING, RADIUS } from "../constants/theme";
 import { useTheme } from "../context/ThemeContext";
 import { useThemedStyles } from "../hooks/useThemedStyles";
 import { useUser } from "../context/UserContext";
+import SidebarThemeToggle from "./SidebarThemeToggle";
 
 const WIDTH = Math.min(300, Dimensions.get("window").width * 0.8);
 
@@ -176,6 +177,11 @@ export default function SideMenu({ visible, onClose }) {
                   <Text style={styles.itemText}>{item.label}</Text>
                 </TouchableOpacity>
               ))}
+            </View>
+
+            <View style={styles.section}>
+              {/* Selector de apariencia */}
+              <SidebarThemeToggle />
             </View>
 
             {/* Cerrar sesión (abajo) */}

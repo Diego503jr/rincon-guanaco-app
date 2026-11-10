@@ -8,7 +8,6 @@ import { useTheme } from "../context/ThemeContext";
 import { useThemedStyles } from "../hooks/useThemedStyles";
 import { itineraryService } from "../api/services/itineraryService";
 import MainLayout from "../components/MainLayout";
-import ThemeToggle from "../components/ThemeToggle";
 
 // Etiqueta e ícono de cada tipo de viajero
 const TRAVELER = {
@@ -119,13 +118,6 @@ export default function ProfileScreen({ navigation }) {
               </View>
             </View>
           ))}
-        </View>
-
-        {/* Apariencia */}
-        <Text style={styles.sectionTitle}>Apariencia</Text>
-        <View style={[styles.card, styles.appearanceCard]}>
-          <Text style={styles.appearanceHint}>Elige cómo se ve la app</Text>
-          <ThemeToggle />
         </View>
 
         {/* Opciones de la cuenta */}

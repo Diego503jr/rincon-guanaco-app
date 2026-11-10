@@ -1,13 +1,23 @@
 import React, { useState, useEffect } from 'react';
 import { useRoute } from '@react-navigation/native';
-import { View, StyleSheet, FlatList, TextInput, TouchableOpacity, ActivityIndicator, Text, Modal, TouchableWithoutFeedback, Keyboard } from 'react-native';
+import {
+  View,
+  StyleSheet,
+  FlatList,
+  TextInput,
+  TouchableOpacity,
+  ActivityIndicator,
+  Text,
+  ScrollView,
+  Alert
+} from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
+import * as Location from 'expo-location';
 import MainLayout from '../components/MainLayout';
 import ReviewCard from '../components/ReviewCard';
-import { getReviews } from '../api/services/reviewsService';
+import { getReviews, postReview } from '../api/services/reviewsService';
 import { SPACING, RADIUS, SHADOWS, FONTS } from '../constants/theme';
 import CreateReviewModal from '../components/CreateReviewModal';
-import { postReview } from '../api/services/reviewsService';
 import ReportReviewModal from '../components/ReportReviewModal';
 import { useTheme } from "../context/ThemeContext";
 import { useThemedStyles } from "../hooks/useThemedStyles";
@@ -21,36 +31,64 @@ export default function ReviewsScreen() {
 
   // Texto escrito en tiempo real en la barra de búsqueda
   const [inputText, setInputText] = useState(destinationParam);
-
-  const { colors, isDark } = useTheme(); // Soportes de color y modo oscuro
-  const styles = useThemedStyles(createStyles);
-
-  // Consulta de búsqueda confirmada (aplicada con retraso)
   const [searchQuery, setSearchQuery] = useState("");
+
+  // Estados para filtros
+  const [isNearbyActive, setIsNearbyActive] = useState(false);
+  const [travelerType, setTravelerType] = useState('Todos');
+  const categories = ['Todos', 'Mochilero', 'Pareja', 'Familia'];
+
+  const { colors, isDark } = useTheme();
+  const styles = useThemedStyles(createStyles);
 
   const [modalVisible, setModalVisible] = useState(false);
   const [reportModalVisible, setReportModalVisible] = useState(false);
   const [selectedReviewId, setSelectedReviewId] = useState(null);
 
-  // Efecto Debounce: Espera 500ms después de que el usuario deja de escribir para actualizar la búsqueda
+  // Efecto Debounce para la búsqueda
   useEffect(() => {
     const delayDebounce = setTimeout(() => {
       setSearchQuery(inputText);
     }, 500);
-
     return () => clearTimeout(delayDebounce);
   }, [inputText]);
 
-  // Efecto para cargar reseñas cuando cambia la query de búsqueda
+  // Efecto para cargar reseñas cuando cambia la búsqueda o los filtros
   useEffect(() => {
     fetchReviews();
-  }, [searchQuery]);
+  }, [searchQuery, isNearbyActive, travelerType]);
 
   // Función para obtener las reseñas desde el servicio
   const fetchReviews = async () => {
     setLoading(true);
     try {
-      const data = await getReviews(searchQuery);
+      let lat = null;
+      let lng = null;
+
+      // Obtener ubicación si el filtro de cercanía está activo
+      if (isNearbyActive) {
+        let { status } = await Location.requestForegroundPermissionsAsync();
+
+        // Coordenadas por defecto (San Salvador)
+        lat = 13.6929;
+        lng = -89.2182;
+
+        if (status === 'granted') {
+          try {
+            let currentLocation = await Promise.race([
+              Location.getCurrentPositionAsync({ accuracy: Location.Accuracy.Balanced }),
+              new Promise((_, reject) => setTimeout(() => reject(new Error('Timeout GPS')), 4000))
+            ]);
+            lat = currentLocation.coords.latitude;
+            lng = currentLocation.coords.longitude;
+          } catch (locationError) {
+            console.log("No se pudo obtener el GPS, usando ubicación por defecto.");
+          }
+        }
+      }
+
+      // Envío de parámetros a getReviews
+      const data = await getReviews(searchQuery, travelerType, isNearbyActive, lat, lng);
       setReviews(data || []);
     } catch (error) {
       console.error("Error fetching reviews:", error);
@@ -59,38 +97,138 @@ export default function ReviewsScreen() {
     }
   };
 
-  // Envía una nueva reseña, recarga la lista y avisa al usuario
   const handleCreateReview = async (reviewData) => {
     try {
       await postReview(reviewData);
-      fetchReviews(); 
+      fetchReviews();
     } catch (error) {
       console.log("Error al crear reseña:", error.response?.data);
       alert("Hubo un error al publicar tu reseña.");
-      throw error; 
+      throw error;
     }
   };
 
-  // Abre el modal de reporte guardando el ID de la reseña seleccionada
   const handleOpenReport = (reviewId) => {
     setSelectedReviewId(reviewId);
     setReportModalVisible(true);
   };
 
+  const clearAllFilters = () => {
+    setInputText('');
+    setIsNearbyActive(false);
+    setTravelerType('Todos');
+  };
+  // Manejar la activación/desactivación del modo cercano con alerta
+  const handleToggleNearby = () => {
+    // Si ya está activo, simplemente lo apagamos
+    if (isNearbyActive) {
+      setIsNearbyActive(false);
+      return;
+    }
+
+    // Si está apagado, le preguntamos al usuario si desea encenderlo
+    Alert.alert(
+      "Buscar reseñas cercanas",
+      "¿Deseas ordenar los destinos basándose en tu ubicación GPS actual?",
+      [
+        {
+          text: "Cancelar",
+          style: "cancel",
+        },
+        {
+          text: "Sí, buscar",
+          onPress: () => {
+            // Al cambiar el estado a true se pedirá los permisos GPS, obtendrá 
+            // las coordenadas y ejecutará la búsqueda en Laravel.
+            setIsNearbyActive(true);
+          },
+        },
+      ]
+    );
+  };
+
   return (
     <MainLayout title="Reseñas">
       <View style={styles.container}>
-        {/* Barra de Búsqueda con debounce */}
-        <View style={styles.searchContainer}>
-          <Ionicons name="search" size={20} color={colors.textMuted} style={styles.searchIcon} />
-          <TextInput
-            style={styles.searchInput}
-            value={inputText}
-            onChangeText={setInputText}
-            placeholder="Buscar destino o autor..."
-            placeholderTextColor={colors.textMuted}
-          />
+
+        {/* Barra de Búsqueda y Botón de Ubicación */}
+        <View style={styles.searchRow}>
+          <View style={styles.searchContainer}>
+            <Ionicons
+              name="search"
+              size={20}
+              color={colors.textMuted}
+              style={styles.searchIcon}
+            />
+            <TextInput
+              style={styles.searchInput}
+              placeholder="Buscar destino o autor..."
+              placeholderTextColor="#9CA3AF"
+              value={inputText}
+              onChangeText={setInputText}
+            />
+
+            {/* Botón x para limpiar búsqueda */}
+            {inputText.length > 0 && (
+              <TouchableOpacity
+                onPress={() => setInputText('')}
+                style={styles.clearIconContainer}
+              >
+                <Ionicons name="close-circle" size={18} color="#9CA3AF" />
+              </TouchableOpacity>
+            )}
+          </View>
+
+          <TouchableOpacity
+            style={[
+              styles.locationButton,
+              isNearbyActive && styles.locationButtonActive,
+            ]}
+            onPress={handleToggleNearby}
+            activeOpacity={0.7}
+          >
+            <Ionicons
+              name={isNearbyActive ? "location" : "location-outline"}
+              size={22}
+              color={isNearbyActive ? colors.onAccent : colors.secondary}
+            />
+          </TouchableOpacity>
         </View>
+
+        {/* Filtros de Tipo de Viajero (Cápsulas) */}
+        <View style={styles.filtersContainer}>
+          <ScrollView horizontal showsHorizontalScrollIndicator={false} contentContainerStyle={styles.filtersScroll}>
+            {categories.map((cat, index) => (
+              <TouchableOpacity
+                key={index}
+                style={[
+                  styles.pill,
+                  travelerType === cat && styles.pillActive
+                ]}
+                onPress={() => setTravelerType(cat)}
+              >
+                <Text style={[
+                  styles.pillText,
+                  travelerType === cat && styles.pillTextActive
+                ]}>
+                  {cat}
+                </Text>
+              </TouchableOpacity>
+            ))}
+          </ScrollView>
+        </View>
+
+        {/* Banner de Cercanía */}
+        {isNearbyActive && (
+          <View style={styles.activeNearbyBanner}>
+            <Text style={styles.activeNearbyText}>
+              Mostrando reseñas ordenadas por cercanía a tu ubicación
+            </Text>
+            <TouchableOpacity onPress={() => setIsNearbyActive(false)}>
+              <Text style={styles.clearNearbyText}>Ver todos</Text>
+            </TouchableOpacity>
+          </View>
+        )}
 
         {/* Lista de Reseñas o indicador de carga */}
         {loading ? (
@@ -107,19 +245,19 @@ export default function ReviewsScreen() {
             ListEmptyComponent={
               <View style={styles.emptyContainer}>
                 <Text style={styles.emptyText}>
-                  {inputText.length > 0
+                  {inputText.length > 0 || travelerType !== 'Todos' || isNearbyActive
                     ? 'No se encontraron reseñas para tu búsqueda.'
                     : 'Aún no hay reseñas disponibles.'}
                 </Text>
 
-                {/* Botón para limpiar filtro cuando hay texto escrito */}
-                {inputText.length > 0 && (
+                {/* Botón para limpiar cualquier filtro activo */}
+                {(inputText.length > 0 || travelerType !== 'Todos' || isNearbyActive) && (
                   <TouchableOpacity
                     style={styles.clearFilterButton}
-                    onPress={() => setInputText('')}
+                    onPress={clearAllFilters}
                   >
                     <Ionicons name="close-circle-outline" size={18} color={colors.white} style={{ marginRight: 6 }} />
-                    <Text style={styles.clearFilterText}>Limpiar filtro</Text>
+                    <Text style={styles.clearFilterText}>Limpiar filtros</Text>
                   </TouchableOpacity>
                 )}
               </View>
@@ -136,7 +274,7 @@ export default function ReviewsScreen() {
           <Ionicons name="add" size={30} color={colors.text} />
         </TouchableOpacity>
 
-        {/* Modal para Crear Reseña */}
+        {/* Modales */}
         <CreateReviewModal
           visible={modalVisible}
           onClose={() => setModalVisible(false)}
@@ -144,8 +282,6 @@ export default function ReviewsScreen() {
           isDark={isDark}
           colors={colors}
         />
-
-        {/* Modal para Reportar Reseña */}
         <ReportReviewModal
           visible={reportModalVisible}
           reviewId={selectedReviewId}
@@ -156,32 +292,108 @@ export default function ReviewsScreen() {
   );
 }
 
-const createStyles = ({ colors }) =>
-  StyleSheet.create({
+const createStyles = ({ colors, isDark }) => {
+  const softGreen = isDark ? colors.secondarySoft : "#E2F9F1";
+  return StyleSheet.create({
     container: {
       flex: 1,
       backgroundColor: colors.surfaceAlt,
     },
-    searchContainer: {
-      flexDirection: "row",
-      alignItems: "center",
-      backgroundColor: colors.surface,
-      borderRadius: RADIUS.pill,
-      marginHorizontal: SPACING.lg,
+    // BÚSQUEDA Y BOTÓN DE PIN
+    searchRow: {
+      flexDirection: 'row',
+      alignItems: 'center',
+      paddingHorizontal: SPACING.lg,
       marginTop: SPACING.lg,
       marginBottom: SPACING.md,
+    },
+    searchContainer: {
+      flex: 1,
+      flexDirection: "row",
+      alignItems: "center",
+      backgroundColor: '#F4F6F8',
+      borderRadius: RADIUS.pill,
       paddingHorizontal: SPACING.md,
-      borderWidth: 1,
-      borderColor: colors.border,
       height: 48,
+      marginRight: SPACING.sm,
     },
     searchIcon: {
       marginRight: SPACING.sm,
     },
     searchInput: {
       flex: 1,
+      fontFamily: FONTS.body,
       fontSize: 16,
-      color: colors.text,
+      color: isDark ? '#1F2937' : colors.text,
+    },
+    // ESTILO PARA LA "X" 
+    clearIconContainer: {
+      padding: 4,
+      marginRight: SPACING.xs,
+      justifyContent: 'center',
+    },
+    locationButton: {
+      width: 48,
+      height: 48,
+      borderRadius: 24,
+      backgroundColor: softGreen,
+      justifyContent: "center",
+      alignItems: "center",
+    },
+    locationButtonActive: {
+      backgroundColor: colors.secondary,
+    },
+    // ESTILOS DE FILTROS TIPO VIAJERO (Pills) 
+    filtersContainer: {
+      marginBottom: SPACING.sm,
+    },
+    filtersScroll: {
+      paddingHorizontal: SPACING.lg,
+    },
+    pill: {
+      backgroundColor: colors.border,
+      paddingVertical: 10,
+      paddingHorizontal: 15,
+      borderRadius: 25,
+      marginRight: SPACING.sm,
+    },
+    pillActive: {
+      backgroundColor: colors.secondary,
+    },
+    pillText: {
+      color: colors.textMuted,
+      fontFamily: FONTS.body,
+      fontSize: 14,
+      fontWeight: '600',
+    },
+    pillTextActive: {
+      color: colors.onAccent,
+    },
+    // BANNER "MOSTRANDO RESEÑAS"
+    activeNearbyBanner: {
+      flexDirection: "row",
+      justifyContent: "space-between",
+      alignItems: "center",
+      backgroundColor: softGreen,
+      paddingHorizontal: SPACING.md,
+      paddingVertical: 12,
+      marginHorizontal: SPACING.lg,
+      borderRadius: RADIUS.sm,
+      marginBottom: SPACING.sm,
+    },
+    activeNearbyText: {
+      fontFamily: FONTS.body,
+      fontSize: 13,
+      color: isDark ? colors.text : "#1F4E47",
+      flex: 1,
+      lineHeight: 18,
+    },
+    clearNearbyText: {
+      fontFamily: FONTS.heading,
+      fontSize: 13,
+      color: colors.secondary,
+      fontWeight: 'bold',
+      marginLeft: SPACING.md,
     },
     listContainer: {
       paddingHorizontal: SPACING.lg,
@@ -228,3 +440,4 @@ const createStyles = ({ colors }) =>
       fontWeight: 'bold',
     },
   });
+};

@@ -293,7 +293,7 @@ export default function ExplorerDestinationsScreen({ navigation }) {
         {isNearbyActive && (
           <View style={styles.activeNearbyBanner}>
             <Text style={styles.activeNearbyText}>
-              ✨ Mostrando lugares ordenados por cercanía a tu ubicación
+              Mostrando lugares ordenados por cercanía a tu ubicación
             </Text>
             <TouchableOpacity onPress={() => setIsNearbyActive(false)}>
               <Text style={styles.clearNearbyText}>Ver todos</Text>

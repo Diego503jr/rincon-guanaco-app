@@ -1,21 +1,6 @@
 import React, { useState, useEffect } from "react";
-import {
-  View,
-  Text,
-  StyleSheet,
-  ScrollView,
-  TouchableOpacity,
-  Image,
-  ActivityIndicator,
-  Linking,
-  Platform,
-  Alert,
-} from "react-native";
-import {
-  Ionicons,
-  MaterialCommunityIcons,
-  FontAwesome5,
-} from "@expo/vector-icons";
+import { View, Text, StyleSheet, ScrollView, TouchableOpacity, Image, ActivityIndicator, Linking, Platform, Alert,} from "react-native";
+import { Ionicons, MaterialCommunityIcons, FontAwesome5,} from "@expo/vector-icons";
 import { activityService } from "../api/services/activityService";
 import { accommodationService } from "../api/services/accommodationService";
 import SelectionsPanel from "../components/SelectionsPanel";
@@ -49,20 +34,34 @@ export default function DestinationDetailScreen({ route, navigation }) {
   const [itemsList, setItemsList] = useState([]);
   const [loadingItems, setLoadingItems] = useState(false);
 
-  // Función para abrir Google Maps / Mapa nativo
-  const openMap = () => {
+  // Función para abrir Waze de forma prioritaria con respaldo en Google Maps
+  const openMap = async () => {
     const lat = destination?.latitude || 13.4924;
     const lon = destination?.longitude || -89.3878;
-    const label = destination?.name || "Destino";
+    const label = encodeURIComponent(destination?.name || "Destino");
 
-    const url = Platform.select({
+    // URLs para Waze y Google Maps
+    const wazeUrl = `waze://?ll=${lat},${lon}&navigate=yes`;
+    const fallbackMapUrl = Platform.select({
       ios: `maps:0,0?q=${label}@${lat},${lon}`,
-      android: `geo:0,0?q=${lat},${lon}(${label})`,
+      android: `https://www.google.com/maps/search/?api=1&query=${lat},${lon}(${label})`,
     });
 
-    Linking.openURL(url).catch((err) =>
-      console.error("Error al abrir el mapa:", err),
-    );
+    try {
+      // Verificamos si Waze está instalado en el dispositivo
+      const canOpenWaze = await Linking.canOpenURL(wazeUrl);
+
+      if (canOpenWaze) {
+        // Si tiene Waze, lo abrimos directamente navegando hacia el punto
+        await Linking.openURL(wazeUrl);
+      } else {
+        // Si no tiene Waze, abrimos el mapa predeterminado (Google Maps / Apple Maps)
+        await Linking.openURL(fallbackMapUrl);
+      }
+    } catch (err) {
+      console.error("Error al abrir la aplicación de navegación:", err);
+      Alert.alert("Error", "No se pudo abrir ninguna aplicación de mapas.");
+    }
   };
 
   // Obtener clima real con latitud y longitud

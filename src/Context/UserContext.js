@@ -6,6 +6,7 @@ import React, {
   useMemo,
   useState,
 } from "react";
+import { Alert } from "react-native";
 import { authService } from "../api/services/authService";
 import { storage } from "../api/storage";
 import { setUnauthorizedHandler } from "../api/client";
@@ -23,6 +24,7 @@ export function UserProvider({ children }) {
 
   const clearSession = useCallback(async () => {
     await storage.clear();
+    await storage.removeToken();
     setUser(null);
     setToken(null);
   }, []);
@@ -47,7 +49,10 @@ export function UserProvider({ children }) {
 
   // Al abrir la app: restaura la sesión guardada y la valida con /me
   useEffect(() => {
-    setUnauthorizedHandler(clearSession);
+    setUnauthorizedHandler(async () => {
+      await clearSession();
+      Alert.alert("Sesión expirada", "Inicia sesión de nuevo para continuar.");
+    });
 
     (async () => {
       try {

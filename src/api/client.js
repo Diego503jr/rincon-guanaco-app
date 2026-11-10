@@ -37,15 +37,17 @@ api.interceptors.response.use(
       url === ENDPOINTS.auth.login || url === ENDPOINTS.auth.register;
 
     if (
-      (error.response?.status === 401 && !isAuthRoute && onUnauthorized) ||
+      error.response?.status === 401 &&
+      !isAuthRoute &&
+      onUnauthorized &&
       !handlingUnauthorized
     ) {
-      handlingUnauthorized = true
+      handlingUnauthorized = true;
 
       try {
         await onUnauthorized();
       } finally {
-        handlingUnauthorized = false
+        handlingUnauthorized = false;
       }
     }
     return Promise.reject(error);

@@ -10,7 +10,9 @@ import {
   StyleSheet,
 } from "react-native";
 import { Ionicons } from "@expo/vector-icons";
-import { COLORS, SPACING, RADIUS, FONTS, SIZES } from "../constants/theme";
+import { SPACING, RADIUS, FONTS, SIZES } from "../constants/theme";
+import { useTheme } from "../context/ThemeContext";
+import { useThemedStyles } from "../hooks/useThemedStyles";
 
 export default function SelectField({
   value,
@@ -21,6 +23,9 @@ export default function SelectField({
   searchable = false,
   hasError = false,
 }) {
+  const { colors } = useTheme(); // para íconos y colores en línea
+  const styles = useThemedStyles(createStyles); // para los estilos
+
   const [visible, setVisible] = useState(false);
   const [query, setQuery] = useState("");
 
@@ -55,7 +60,7 @@ export default function SelectField({
         >
           {selected ? selected.label : placeholder}
         </Text>
-        <Ionicons name="chevron-down" size={18} color={COLORS.textMuted} />
+        <Ionicons name="chevron-down" size={18} color={colors.textMuted} />
       </TouchableOpacity>
 
       <Modal
@@ -72,7 +77,7 @@ export default function SelectField({
                 onPress={close}
                 hitSlop={{ top: 10, bottom: 10, left: 10, right: 10 }}
               >
-                <Ionicons name="close" size={22} color={COLORS.text} />
+                <Ionicons name="close" size={22} color={colors.text} />
               </TouchableOpacity>
             </View>
 
@@ -80,7 +85,7 @@ export default function SelectField({
               <TextInput
                 style={styles.search}
                 placeholder="Buscar..."
-                placeholderTextColor={COLORS.textMuted}
+                placeholderTextColor={colors.textMuted}
                 value={query}
                 onChangeText={setQuery}
                 autoCorrect={false}
@@ -113,7 +118,7 @@ export default function SelectField({
                       <Ionicons
                         name="checkmark"
                         size={20}
-                        color={COLORS.primary}
+                        color={colors.primaryText}
                       />
                     )}
                   </TouchableOpacity>
@@ -127,79 +132,80 @@ export default function SelectField({
   );
 }
 
-const styles = StyleSheet.create({
-  field: {
-    height: 40,
-    borderWidth: 1,
-    borderColor: COLORS.primary,
-    borderRadius: RADIUS.md,
-    backgroundColor: COLORS.white,
-    paddingHorizontal: SPACING.md,
-    flexDirection: "row",
-    alignItems: "center",
-    justifyContent: "space-between",
-  },
-  fieldError: { borderColor: COLORS.accent },
-  fieldText: {
-    flex: 1,
-    fontFamily: FONTS.body,
-    fontSize: SIZES.body,
-    color: COLORS.text,
-  },
-  placeholder: { color: COLORS.textMuted },
+const createStyles = ({ colors }) =>
+  StyleSheet.create({
+    field: {
+      height: 40,
+      borderWidth: 1,
+      borderColor: colors.primaryText,
+      borderRadius: RADIUS.md,
+      backgroundColor: colors.surface,
+      paddingHorizontal: SPACING.md,
+      flexDirection: "row",
+      alignItems: "center",
+      justifyContent: "space-between",
+    },
+    fieldError: { borderColor: colors.accent },
+    fieldText: {
+      flex: 1,
+      fontFamily: FONTS.body,
+      fontSize: SIZES.body,
+      color: colors.text,
+    },
+    placeholder: { color: colors.textMuted },
 
-  overlay: {
-    flex: 1,
-    backgroundColor: "rgba(0,0,0,0.45)",
-    justifyContent: "flex-end",
-  },
-  sheet: {
-    maxHeight: "70%",
-    backgroundColor: COLORS.white,
-    borderTopLeftRadius: 16,
-    borderTopRightRadius: 16,
-    paddingBottom: SPACING.lg,
-  },
-  sheetHeader: {
-    flexDirection: "row",
-    alignItems: "center",
-    justifyContent: "space-between",
-    padding: SPACING.lg,
-  },
-  sheetTitle: {
-    fontFamily: FONTS.heading,
-    fontSize: SIZES.h3,
-    color: COLORS.primary,
-  },
-  search: {
-    height: 40,
-    marginHorizontal: SPACING.lg,
-    marginBottom: SPACING.sm,
-    borderWidth: 1,
-    borderColor: COLORS.primary,
-    borderRadius: RADIUS.md,
-    paddingHorizontal: SPACING.md,
-    fontFamily: FONTS.body,
-    fontSize: SIZES.body,
-    color: COLORS.text,
-  },
-  option: {
-    flexDirection: "row",
-    alignItems: "center",
-    justifyContent: "space-between",
-    paddingVertical: SPACING.md,
-    paddingHorizontal: SPACING.lg,
-  },
-  optionText: {
-    fontFamily: FONTS.body,
-    fontSize: SIZES.body,
-    color: COLORS.text,
-  },
-  optionSelected: { fontFamily: FONTS.heading, color: COLORS.primary },
-  empty: {
-    textAlign: "center",
-    padding: SPACING.lg,
-    fontFamily: FONTS.body,
-    color: COLORS.textMuted,
-  },
-});
+    overlay: {
+      flex: 1,
+      backgroundColor: "rgba(0,0,0,0.45)",
+      justifyContent: "flex-end",
+    },
+    sheet: {
+      maxHeight: "70%",
+      backgroundColor: colors.surface,
+      borderTopLeftRadius: 16,
+      borderTopRightRadius: 16,
+      paddingBottom: SPACING.lg,
+    },
+    sheetHeader: {
+      flexDirection: "row",
+      alignItems: "center",
+      justifyContent: "space-between",
+      padding: SPACING.lg,
+    },
+    sheetTitle: {
+      fontFamily: FONTS.heading,
+      fontSize: SIZES.h3,
+      color: colors.primaryText,
+    },
+    search: {
+      height: 40,
+      marginHorizontal: SPACING.lg,
+      marginBottom: SPACING.sm,
+      borderWidth: 1,
+      borderColor: colors.primaryText,
+      borderRadius: RADIUS.md,
+      paddingHorizontal: SPACING.md,
+      fontFamily: FONTS.body,
+      fontSize: SIZES.body,
+      color: colors.text,
+    },
+    option: {
+      flexDirection: "row",
+      alignItems: "center",
+      justifyContent: "space-between",
+      paddingVertical: SPACING.md,
+      paddingHorizontal: SPACING.lg,
+    },
+    optionText: {
+      fontFamily: FONTS.body,
+      fontSize: SIZES.body,
+      color: colors.text,
+    },
+    optionSelected: { fontFamily: FONTS.heading, color: colors.primaryText },
+    empty: {
+      textAlign: "center",
+      padding: SPACING.lg,
+      fontFamily: FONTS.body,
+      color: colors.textMuted,
+    },
+  });

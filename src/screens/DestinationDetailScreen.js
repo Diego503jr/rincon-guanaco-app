@@ -1,14 +1,33 @@
 import React, { useState, useEffect } from "react";
-import { View, Text, StyleSheet, ScrollView, TouchableOpacity, Image, ActivityIndicator, Linking, Platform, Alert,} from "react-native";
-import { Ionicons, MaterialCommunityIcons, FontAwesome5,} from "@expo/vector-icons";
+import {
+  View,
+  Text,
+  StyleSheet,
+  ScrollView,
+  TouchableOpacity,
+  Image,
+  ActivityIndicator,
+  Linking,
+  Platform,
+  Alert,
+} from "react-native";
+import {
+  Ionicons,
+  MaterialCommunityIcons,
+  FontAwesome5,
+} from "@expo/vector-icons";
 import { activityService } from "../api/services/activityService";
 import { accommodationService } from "../api/services/accommodationService";
 import SelectionsPanel from "../components/SelectionsPanel";
 import { useSelections } from "../store/selectionStore";
-import { COLORS, FONTS, SIZES, SPACING, RADIUS, SHADOWS, TYPOGRAPHY,} from "../constants/theme";
+import { FONTS, SIZES, SPACING, RADIUS, SHADOWS } from "../constants/theme";
+import { useTheme } from "../context/ThemeContext";
+import { useThemedStyles } from "../hooks/useThemedStyles";
 
 export default function DestinationDetailScreen({ route, navigation }) {
   const { destination } = route.params || {};
+  const { colors } = useTheme(); // para íconos y colores en línea
+  const styles = useThemedStyles(createStyles); // para los estilos
   const [activeTab, setActiveTab] = useState("actividades");
 
   // Estado que controla si hay una selección previa para desbloquear el tercer tab
@@ -122,7 +141,7 @@ export default function DestinationDetailScreen({ route, navigation }) {
           style={styles.backButton}
           onPress={() => navigation.goBack()}
         >
-          <Ionicons name="arrow-back" size={20} color={COLORS.white} />
+          <Ionicons name="arrow-back" size={20} color={colors.onAccent} />
         </TouchableOpacity>
         <Text style={styles.topBarTitle}>Destino Seleccionado</Text>
       </View>
@@ -142,7 +161,7 @@ export default function DestinationDetailScreen({ route, navigation }) {
             style={styles.heroImage}
           />
           <TouchableOpacity style={styles.mapPinBadge} onPress={openMap}>
-            <Ionicons name="location" size={20} color={COLORS.secondary} />
+            <Ionicons name="location" size={20} color={colors.secondary} />
           </TouchableOpacity>
         </View>
 
@@ -159,7 +178,7 @@ export default function DestinationDetailScreen({ route, navigation }) {
           {loadingWeather ? (
             <ActivityIndicator
               size="small"
-              color={COLORS.secondary}
+              color={colors.secondary}
               style={{ flex: 1, padding: 15 }}
             />
           ) : (
@@ -179,7 +198,7 @@ export default function DestinationDetailScreen({ route, navigation }) {
                   <MaterialCommunityIcons
                     name="thermometer"
                     size={16}
-                    color={COLORS.secondary}
+                    color={colors.secondary}
                   />
                   <Text style={styles.weatherInfoText}>
                     Sensación:{" "}
@@ -187,13 +206,17 @@ export default function DestinationDetailScreen({ route, navigation }) {
                   </Text>
                 </View>
                 <View style={styles.weatherInfoRow}>
-                  <Ionicons name="water" size={16} color={COLORS.secondary} />
+                  <Ionicons name="water" size={16} color={colors.secondary} />
                   <Text style={styles.weatherInfoText}>
                     Humedad: {weather ? `${weather.humidity}%` : "--"}
                   </Text>
                 </View>
                 <View style={styles.weatherInfoRow}>
-                  <FontAwesome5 name="wind" size={14} color={COLORS.secondary} />
+                  <FontAwesome5
+                    name="wind"
+                    size={14}
+                    color={colors.secondary}
+                  />
                   <Text style={styles.weatherInfoText}>
                     Viento: {weather ? `${weather.windSpeed} km/h` : "--"}
                   </Text>
@@ -268,7 +291,7 @@ export default function DestinationDetailScreen({ route, navigation }) {
         ) : loadingItems ? (
           <ActivityIndicator
             size="large"
-            color={COLORS.primary}
+            color={colors.primaryText}
             style={{ marginVertical: SPACING.lg }}
           />
         ) : itemsList.length === 0 ? (
@@ -333,7 +356,7 @@ export default function DestinationDetailScreen({ route, navigation }) {
                           <Ionicons
                             name="time-outline"
                             size={13}
-                            color={COLORS.textMuted}
+                            color={colors.textMuted}
                           />
                           <Text style={styles.metaText}>
                             Entrada:{" "}
@@ -353,12 +376,12 @@ export default function DestinationDetailScreen({ route, navigation }) {
                           <Ionicons
                             name="call-outline"
                             size={13}
-                            color={COLORS.secondary}
+                            color={colors.secondary}
                           />
                           <Text
                             style={[
                               styles.metaText,
-                              { color: COLORS.secondary, fontWeight: "600" },
+                              { color: colors.secondary, fontWeight: "600" },
                             ]}
                           >
                             {item.contact_phone}
@@ -379,232 +402,234 @@ export default function DestinationDetailScreen({ route, navigation }) {
   );
 }
 
-const styles = StyleSheet.create({
-  mainContainer: {
-    flex: 1,
-    backgroundColor: COLORS.primary,
-  },
-  topBar: {
-    flexDirection: "row",
-    alignItems: "center",
-    paddingHorizontal: SPACING.md,
-    paddingTop: 45,
-    paddingBottom: SPACING.sm,
-    backgroundColor: COLORS.primary,
-  },
-  backButton: {
-    backgroundColor: COLORS.accent,
-    width: 32,
-    height: 32,
-    borderRadius: RADIUS.pill,
-    justifyContent: "center",
-    alignItems: "center",
-  },
-  topBarTitle: {
-    color: COLORS.white,
-    fontFamily: FONTS.heading,
-    fontSize: SIZES.h3,
-    marginLeft: SPACING.sm,
-  },
-  scrollContainer: {
-    backgroundColor: COLORS.white,
-    borderTopLeftRadius: RADIUS.lg,
-    borderTopRightRadius: RADIUS.lg,
-    paddingHorizontal: SPACING.md,
-    paddingTop: SPACING.md,
-  },
-  heroContainer: {
-    position: "relative",
-    alignItems: "center",
-  },
-  heroImage: {
-    width: "100%",
-    height: 220,
-    borderRadius: RADIUS.md,
-  },
-  mapPinBadge: {
-    position: "absolute",
-    top: "80%",
-    alignSelf: "center",
-    backgroundColor: "#ffffff9f",
-    padding: 10,
-    borderRadius: RADIUS.pill,
-    ...SHADOWS.card,
-  },
-  destinationTitle: {
-    fontFamily: FONTS.heading,
-    fontSize: SIZES.h1,
-    color: COLORS.primary,
-    textAlign: "center",
-    marginTop: SPACING.sm,
-  },
-  destinationSubtitle: {
-    fontFamily: FONTS.body,
-    fontSize: SIZES.body,
-    color: COLORS.textMuted,
-    textAlign: "center",
-    marginBottom: SPACING.md,
-  },
-  weatherCard: {
-    backgroundColor: "#EFF6FF",
-    borderRadius: RADIUS.md,
-    padding: SPACING.sm,
-    flexDirection: "row",
-    alignItems: "center",
-    marginBottom: SPACING.md,
-    borderWidth: 1,
-    borderColor: "#DBEAFE",
-    minHeight: 85,
-  },
-  weatherLeft: {
-    flex: 1.2,
-    flexDirection: "row",
-    alignItems: "center",
-  },
-  tempText: {
-    fontFamily: FONTS.heading,
-    fontSize: SIZES.h2,
-    color: COLORS.text,
-  },
-  weatherDesc: {
-    fontFamily: FONTS.body,
-    fontSize: SIZES.small,
-    color: COLORS.textMuted,
-    marginTop: 2,
-  },
-  weatherDivider: {
-    width: 1,
-    height: "80%",
-    backgroundColor: "#BFDBFE",
-    marginHorizontal: SPACING.sm,
-  },
-  weatherRight: {
-    flex: 1,
-    justifyContent: "center",
-  },
-  weatherInfoRow: {
-    flexDirection: "row",
-    alignItems: "center",
-    marginVertical: 2,
-  },
-  weatherInfoText: {
-    fontFamily: FONTS.body,
-    fontSize: SIZES.small,
-    color: COLORS.text,
-    marginLeft: 6,
-  },
-  tabsContainer: {
-    flexDirection: "row",
-    justifyContent: "space-between",
-    marginBottom: SPACING.md,
-  },
-  tabButton: {
-    flex: 1,
-    paddingVertical: SPACING.sm,
-    marginHorizontal: 4,
-    borderRadius: RADIUS.pill,
-    backgroundColor: COLORS.border,
-    alignItems: "center",
-  },
-  tabActive: {
-    backgroundColor: COLORS.secondary,
-  },
-  tabDisabled: {
-    backgroundColor: COLORS.background,
-    borderColor: COLORS.border,
-    borderWidth: 1,
-    opacity: 0.5,
-  },
-  tabText: {
-    fontFamily: FONTS.heading,
-    fontSize: SIZES.small,
-    color: COLORS.textMuted,
-  },
-  tabTextActive: {
-    color: COLORS.white,
-  },
-  tabTextDisabled: {
-    color: COLORS.textMuted,
-  },
-  itemCard: {
-    flexDirection: "row",
-    backgroundColor: COLORS.white,
-    borderRadius: RADIUS.md,
-    padding: SPACING.sm,
-    marginBottom: SPACING.sm,
-    borderWidth: 1,
-    borderColor: COLORS.border,
-    ...SHADOWS.card,
-  },
-  activityCard: {
-    backgroundColor: COLORS.white,
-    borderRadius: RADIUS.md,
-    padding: SPACING.sm,
-    marginBottom: SPACING.sm,
-    borderWidth: 1,
-    borderColor: COLORS.border,
-    ...SHADOWS.card,
-  },
-  itemImage: {
-    width: 90,
-    height: 80,
-    borderRadius: RADIUS.sm,
-  },
-  itemContent: {
-    flex: 1,
-    marginLeft: SPACING.sm,
-    justifyContent: "center",
-  },
-  cardHeaderRow: {
-    flexDirection: "row",
-    justifyContent: "space-between",
-    alignItems: "center",
-    marginBottom: 4,
-  },
-  itemTitle: {
-    fontFamily: FONTS.heading,
-    fontSize: SIZES.body,
-    color: COLORS.primary,
-    flex: 1,
-    marginRight: SPACING.xs,
-  },
-  itemDescription: {
-    fontFamily: FONTS.body,
-    fontSize: SIZES.small,
-    color: COLORS.textMuted,
-  },
-  activityPrice: {
-    fontFamily: FONTS.heading,
-    fontSize: SIZES.body,
-    color: COLORS.secondary,
-  },
-  metaText: {
-    fontFamily: FONTS.body,
-    fontSize: SIZES.small,
-    color: COLORS.text,
-    marginLeft: 4,
-  },
-  noDataText: {
-    fontFamily: FONTS.body,
-    textAlign: "center",
-    color: COLORS.textMuted,
-    marginVertical: SPACING.lg,
-    fontSize: SIZES.body,
-  },
-  nightText: {
-    fontFamily: FONTS.body,
-    fontSize: SIZES.small,
-    color: COLORS.textMuted,
-  },
-  accommodationMetaContainer: {
-    marginTop: SPACING.xs,
-    borderTopWidth: 1,
-    borderTopColor: COLORS.border,
-    paddingTop: 6,
-  },
-  metaRow: {
-    flexDirection: "row",
-    alignItems: "center",
-    marginTop: 3,
-  },
-});
+const createStyles = ({ colors, isDark }) =>
+  StyleSheet.create({
+    mainContainer: {
+      flex: 1,
+      backgroundColor: colors.primary,
+    },
+    topBar: {
+      flexDirection: "row",
+      alignItems: "center",
+      paddingHorizontal: SPACING.md,
+      paddingTop: 45,
+      paddingBottom: SPACING.sm,
+      backgroundColor: colors.primary,
+    },
+    backButton: {
+      backgroundColor: colors.accent,
+      width: 32,
+      height: 32,
+      borderRadius: RADIUS.pill,
+      justifyContent: "center",
+      alignItems: "center",
+    },
+    topBarTitle: {
+      color: colors.onAccent,
+      fontFamily: FONTS.heading,
+      fontSize: SIZES.h3,
+      marginLeft: SPACING.sm,
+    },
+    scrollContainer: {
+      backgroundColor: colors.surface,
+      borderTopLeftRadius: RADIUS.lg,
+      borderTopRightRadius: RADIUS.lg,
+      paddingHorizontal: SPACING.md,
+      paddingTop: SPACING.md,
+    },
+    heroContainer: {
+      position: "relative",
+      alignItems: "center",
+    },
+    heroImage: {
+      width: "100%",
+      height: 220,
+      borderRadius: RADIUS.md,
+    },
+    mapPinBadge: {
+      position: "absolute",
+      top: "80%",
+      alignSelf: "center",
+      backgroundColor: "#ffffff9f",
+      padding: 10,
+      borderRadius: RADIUS.pill,
+      ...SHADOWS.card,
+    },
+    destinationTitle: {
+      fontFamily: FONTS.heading,
+      fontSize: SIZES.h1,
+      color: colors.primaryText,
+      textAlign: "center",
+      marginTop: SPACING.sm,
+    },
+    destinationSubtitle: {
+      fontFamily: FONTS.body,
+      fontSize: SIZES.body,
+      color: colors.textMuted,
+      textAlign: "center",
+      marginBottom: SPACING.md,
+    },
+    weatherCard: {
+      // Los azules claros fijos se ven mal en oscuro: ahí usa los colores del tema
+      backgroundColor: isDark ? colors.surfaceAlt : "#EFF6FF",
+      borderRadius: RADIUS.md,
+      padding: SPACING.sm,
+      flexDirection: "row",
+      alignItems: "center",
+      marginBottom: SPACING.md,
+      borderWidth: 1,
+      borderColor: isDark ? colors.border : "#DBEAFE",
+      minHeight: 85,
+    },
+    weatherLeft: {
+      flex: 1.2,
+      flexDirection: "row",
+      alignItems: "center",
+    },
+    tempText: {
+      fontFamily: FONTS.heading,
+      fontSize: SIZES.h2,
+      color: colors.text,
+    },
+    weatherDesc: {
+      fontFamily: FONTS.body,
+      fontSize: SIZES.small,
+      color: colors.textMuted,
+      marginTop: 2,
+    },
+    weatherDivider: {
+      width: 1,
+      height: "80%",
+      backgroundColor: isDark ? colors.border : "#BFDBFE",
+      marginHorizontal: SPACING.sm,
+    },
+    weatherRight: {
+      flex: 1,
+      justifyContent: "center",
+    },
+    weatherInfoRow: {
+      flexDirection: "row",
+      alignItems: "center",
+      marginVertical: 2,
+    },
+    weatherInfoText: {
+      fontFamily: FONTS.body,
+      fontSize: SIZES.small,
+      color: colors.text,
+      marginLeft: 6,
+    },
+    tabsContainer: {
+      flexDirection: "row",
+      justifyContent: "space-between",
+      marginBottom: SPACING.md,
+    },
+    tabButton: {
+      flex: 1,
+      paddingVertical: SPACING.sm,
+      marginHorizontal: 4,
+      borderRadius: RADIUS.pill,
+      backgroundColor: colors.border,
+      alignItems: "center",
+    },
+    tabActive: {
+      backgroundColor: colors.secondary,
+    },
+    tabDisabled: {
+      backgroundColor: colors.surfaceAlt,
+      borderColor: colors.border,
+      borderWidth: 1,
+      opacity: 0.5,
+    },
+    tabText: {
+      fontFamily: FONTS.heading,
+      fontSize: SIZES.small,
+      color: colors.textMuted,
+    },
+    tabTextActive: {
+      color: colors.onAccent,
+    },
+    tabTextDisabled: {
+      color: colors.textMuted,
+    },
+    itemCard: {
+      flexDirection: "row",
+      backgroundColor: colors.surface,
+      borderRadius: RADIUS.md,
+      padding: SPACING.sm,
+      marginBottom: SPACING.sm,
+      borderWidth: 1,
+      borderColor: colors.border,
+      ...SHADOWS.card,
+    },
+    activityCard: {
+      backgroundColor: colors.surface,
+      borderRadius: RADIUS.md,
+      padding: SPACING.sm,
+      marginBottom: SPACING.sm,
+      borderWidth: 1,
+      borderColor: colors.border,
+      ...SHADOWS.card,
+    },
+    itemImage: {
+      width: 90,
+      height: 80,
+      borderRadius: RADIUS.sm,
+    },
+    itemContent: {
+      flex: 1,
+      marginLeft: SPACING.sm,
+      justifyContent: "center",
+    },
+    cardHeaderRow: {
+      flexDirection: "row",
+      justifyContent: "space-between",
+      alignItems: "center",
+      marginBottom: 4,
+    },
+    itemTitle: {
+      fontFamily: FONTS.heading,
+      fontSize: SIZES.body,
+      color: colors.primaryText,
+      flex: 1,
+      marginRight: SPACING.xs,
+    },
+    itemDescription: {
+      fontFamily: FONTS.body,
+      fontSize: SIZES.small,
+      color: colors.textMuted,
+    },
+    activityPrice: {
+      fontFamily: FONTS.heading,
+      fontSize: SIZES.body,
+      color: colors.secondary,
+    },
+    metaText: {
+      fontFamily: FONTS.body,
+      fontSize: SIZES.small,
+      color: colors.text,
+      marginLeft: 4,
+    },
+    noDataText: {
+      fontFamily: FONTS.body,
+      textAlign: "center",
+      color: colors.textMuted,
+      marginVertical: SPACING.lg,
+      fontSize: SIZES.body,
+    },
+    nightText: {
+      fontFamily: FONTS.body,
+      fontSize: SIZES.small,
+      color: colors.textMuted,
+    },
+    accommodationMetaContainer: {
+      marginTop: SPACING.xs,
+      borderTopWidth: 1,
+      borderTopColor: colors.border,
+      paddingTop: 6,
+    },
+    metaRow: {
+      flexDirection: "row",
+      alignItems: "center",
+      marginTop: 3,
+    },
+  });

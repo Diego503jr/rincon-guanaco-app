@@ -1,5 +1,7 @@
 // Convierte cualquier error de Axios/Laravel en un texto listo para mostrar
 export function getErrorMessage(error) {
+  console.log(error);
+
   if (error.response) {
     const { data, status } = error.response;
     if (data?.errors) return Object.values(data.errors).flat().join("\n"); // validación 422

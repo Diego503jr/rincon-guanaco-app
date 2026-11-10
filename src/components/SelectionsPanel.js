@@ -1,8 +1,17 @@
 import { useState } from "react";
-import { View, Text, TouchableOpacity, ActivityIndicator, Alert, StyleSheet } from "react-native";
+import {
+  View,
+  Text,
+  TouchableOpacity,
+  ActivityIndicator,
+  Alert,
+  StyleSheet,
+} from "react-native";
 import { useNavigation } from "@react-navigation/native";
 import { Ionicons } from "@expo/vector-icons";
-import { COLORS, FONTS, SIZES, SPACING, RADIUS, SHADOWS, TYPOGRAPHY } from "../constants/theme";
+import { FONTS, SIZES, SPACING, RADIUS, SHADOWS } from "../constants/theme";
+import { useTheme } from "../context/ThemeContext";
+import { useThemedStyles } from "../hooks/useThemedStyles";
 import {
   useSelections,
   updateSelection,
@@ -17,12 +26,15 @@ import AccommodationReserveModal from "./AccommodationReserveModal";
 import ItineraryFormModal from "./ItineraryFormModal";
 
 export default function SelectionsPanel({ suggestedTitle = "", onConfirmed }) {
+  const { colors, typography } = useTheme(); // para íconos y estilos en línea
+  const styles = useThemedStyles(createStyles); // para los estilos
+
   const navigation = useNavigation();
   const selections = useSelections();
   const total = getSelectionsTotal(selections);
 
   const [editing, setEditing] = useState(null); // selección que se está editando
-  const [naming, setNaming] = useState(false);  // modal para ponerle nombre al viaje
+  const [naming, setNaming] = useState(false); // modal para ponerle nombre al viaje
   const [saving, setSaving] = useState(false);
   const [formError, setFormError] = useState(null);
 
@@ -36,7 +48,11 @@ export default function SelectionsPanel({ suggestedTitle = "", onConfirmed }) {
   const confirmRemove = (item) => {
     Alert.alert("¿Quitar de tus selecciones?", `Se quitará "${item.name}".`, [
       { text: "Cancelar", style: "cancel" },
-      { text: "Quitar", style: "destructive", onPress: () => removeSelection(item.key) },
+      {
+        text: "Quitar",
+        style: "destructive",
+        onPress: () => removeSelection(item.key),
+      },
     ]);
   };
 
@@ -88,7 +104,10 @@ export default function SelectionsPanel({ suggestedTitle = "", onConfirmed }) {
         `"${title}" se creó, pero no se pudo agregar:\n\n${failed.join("\n")}\n\nLo que falló sigue en tus Selecciones.`,
       );
     } else {
-      Alert.alert("¡Itinerario confirmado!", `"${title}" ya está en Mi Itinerario.`);
+      Alert.alert(
+        "¡Itinerario confirmado!",
+        `"${title}" ya está en Mi Itinerario.`,
+      );
     }
 
     if (onConfirmed) onConfirmed(itinerary);
@@ -101,7 +120,10 @@ export default function SelectionsPanel({ suggestedTitle = "", onConfirmed }) {
       return [
         { icon: "calendar-outline", text: formatLongDate(item.date_time) },
         { icon: "time-outline", text: formatTime(item.date_time) },
-        { icon: "people-outline", text: `${item.people} ${item.people === 1 ? "persona" : "personas"}` },
+        {
+          icon: "people-outline",
+          text: `${item.people} ${item.people === 1 ? "persona" : "personas"}`,
+        },
       ];
     }
     return [
@@ -123,23 +145,36 @@ export default function SelectionsPanel({ suggestedTitle = "", onConfirmed }) {
   if (selections.length === 0) {
     return (
       <View style={styles.empty}>
-        <Ionicons name="bookmarks-outline" size={44} color={COLORS.textMuted} />
-        <Text style={styles.emptyText}>Aún no has seleccionado actividades ni alojamientos.</Text>
-        <Text style={styles.emptyText}>Toca una actividad o un alojamiento para agregarlo.</Text>
+        <Ionicons name="bookmarks-outline" size={44} color={colors.textMuted} />
+        <Text style={styles.emptyText}>
+          Aún no has seleccionado actividades ni alojamientos.
+        </Text>
+        <Text style={styles.emptyText}>
+          Toca una actividad o un alojamiento para agregarlo.
+        </Text>
       </View>
     );
   }
 
   return (
     <View>
-            <Text style={styles.heading}>Revisa tu viaje antes de confirmar</Text>
+      <Text style={styles.heading}>Revisa tu viaje antes de confirmar</Text>
 
       {selections.map((item) => {
         const isActivity = item.type === "activity";
         return (
           <View key={item.key} style={styles.card}>
-            <View style={[styles.iconCircle, !isActivity && { backgroundColor: COLORS.primary }]}>
-              <Ionicons name={isActivity ? "compass-outline" : "bed-outline"} size={20} color={COLORS.white} />
+            <View
+              style={[
+                styles.iconCircle,
+                !isActivity && { backgroundColor: colors.primary },
+              ]}
+            >
+              <Ionicons
+                name={isActivity ? "compass-outline" : "bed-outline"}
+                size={20}
+                color={colors.onAccent}
+              />
             </View>
 
             <View style={styles.cardBody}>
@@ -147,12 +182,18 @@ export default function SelectionsPanel({ suggestedTitle = "", onConfirmed }) {
                 <Text style={styles.cardTitle} numberOfLines={2}>
                   {item.name}
                 </Text>
-                <Text style={styles.price}>${Number(item.subtotal || 0).toFixed(2)}</Text>
+                <Text style={styles.price}>
+                  ${Number(item.subtotal || 0).toFixed(2)}
+                </Text>
               </View>
 
               {location(item.destination) ? (
                 <View style={styles.row}>
-                  <Ionicons name="location-outline" size={14} color={COLORS.secondary} />
+                  <Ionicons
+                    name="location-outline"
+                    size={14}
+                    color={colors.secondary}
+                  />
                   <Text style={styles.cardText} numberOfLines={1}>
                     {location(item.destination)}
                   </Text>
@@ -161,7 +202,7 @@ export default function SelectionsPanel({ suggestedTitle = "", onConfirmed }) {
 
               {details(item).map((d) => (
                 <View key={d.icon} style={styles.row}>
-                  <Ionicons name={d.icon} size={14} color={COLORS.secondary} />
+                  <Ionicons name={d.icon} size={14} color={colors.secondary} />
                   <Text style={styles.cardText}>{d.text}</Text>
                 </View>
               ))}
@@ -170,7 +211,10 @@ export default function SelectionsPanel({ suggestedTitle = "", onConfirmed }) {
                 <TouchableOpacity onPress={() => setEditing(item)} hitSlop={8}>
                   <Ionicons name="pencil-outline" size={22} color="#1E88E5" />
                 </TouchableOpacity>
-                <TouchableOpacity onPress={() => confirmRemove(item)} hitSlop={8}>
+                <TouchableOpacity
+                  onPress={() => confirmRemove(item)}
+                  hitSlop={8}
+                >
                   <Ionicons name="trash-outline" size={22} color="#F2A900" />
                 </TouchableOpacity>
               </View>
@@ -195,9 +239,9 @@ export default function SelectionsPanel({ suggestedTitle = "", onConfirmed }) {
         activeOpacity={0.85}
       >
         {saving ? (
-          <ActivityIndicator color={COLORS.white} />
+          <ActivityIndicator color={colors.onAccent} />
         ) : (
-          <Text style={TYPOGRAPHY.button}>Confirmar Itinerario</Text>
+          <Text style={typography.button}>Confirmar Itinerario</Text>
         )}
       </TouchableOpacity>
 
@@ -207,7 +251,12 @@ export default function SelectionsPanel({ suggestedTitle = "", onConfirmed }) {
         mode="edit"
         activity={
           editing?.type === "activity"
-            ? { id: editing.refId, name: editing.name, description: editing.description, price: editing.price }
+            ? {
+                id: editing.refId,
+                name: editing.name,
+                description: editing.description,
+                price: editing.price,
+              }
             : null
         }
         initial={editing?.type === "activity" ? editing : null}
@@ -221,7 +270,12 @@ export default function SelectionsPanel({ suggestedTitle = "", onConfirmed }) {
         mode="edit"
         accommodation={
           editing?.type === "accommodation"
-            ? editing.source ?? { id: editing.refId, name: editing.name, address: editing.description, price: editing.price }
+            ? (editing.source ?? {
+                id: editing.refId,
+                name: editing.name,
+                address: editing.description,
+                price: editing.price,
+              })
             : null
         }
         initial={editing?.type === "accommodation" ? editing : null}
@@ -230,7 +284,7 @@ export default function SelectionsPanel({ suggestedTitle = "", onConfirmed }) {
       />
 
       {/* Ponerle nombre al viaje antes de guardarlo */}
-        <ItineraryFormModal
+      <ItineraryFormModal
         visible={naming}
         mode="create"
         title="Confirmar Itinerario"
@@ -245,51 +299,94 @@ export default function SelectionsPanel({ suggestedTitle = "", onConfirmed }) {
   );
 }
 
-const styles = StyleSheet.create({
-  heading: { fontFamily: FONTS.heading, fontSize: SIZES.h3, color: COLORS.primary, marginBottom: SPACING.sm },
-  card: {
-    flexDirection: "row",
-    backgroundColor: COLORS.white,
-    borderRadius: RADIUS.md,
-    padding: SPACING.md,
-    marginBottom: SPACING.md,
-    borderWidth: 1,
-    borderColor: COLORS.border,
-    ...SHADOWS.card,
-  },
-  iconCircle: {
-    width: 40,
-    height: 40,
-    borderRadius: 20,
-    backgroundColor: COLORS.secondary,
-    alignItems: "center",
-    justifyContent: "center",
-  },
-  cardBody: { flex: 1, marginLeft: SPACING.md },
-  cardHeader: { flexDirection: "row", justifyContent: "space-between", alignItems: "flex-start", gap: SPACING.sm },
-  cardTitle: { flex: 1, fontFamily: FONTS.heading, fontSize: SIZES.body, color: COLORS.primary },
-  price: { fontFamily: FONTS.heading, fontSize: SIZES.body, color: COLORS.secondary },
-  row: { flexDirection: "row", alignItems: "center", gap: SPACING.xs, marginTop: 4 },
-  cardText: { ...TYPOGRAPHY.small, color: COLORS.text, flexShrink: 1 },
-  cardActions: { flexDirection: "row", justifyContent: "flex-end", gap: SPACING.md, marginTop: SPACING.xs },
-  totalBox: {
-    flexDirection: "row",
-    justifyContent: "space-between",
-    alignItems: "center",
-    padding: SPACING.md,
-    borderRadius: RADIUS.md,
-    backgroundColor: COLORS.background,
-  },
-  totalLabel: { fontFamily: FONTS.heading, fontSize: SIZES.body, color: COLORS.primary },
-  totalAmount: { fontFamily: FONTS.heading, fontSize: SIZES.h2, color: COLORS.accent },
-  confirmButton: {
-    height: 48,
-    borderRadius: RADIUS.md,
-    backgroundColor: COLORS.accent,
-    alignItems: "center",
-    justifyContent: "center",
-    marginTop: SPACING.md,
-  },
-  empty: { alignItems: "center", padding: SPACING.xl },
-  emptyText: { ...TYPOGRAPHY.body, color: COLORS.textMuted, textAlign: "center", marginTop: SPACING.sm },
-});
+const createStyles = ({ colors, typography }) =>
+  StyleSheet.create({
+    heading: {
+      fontFamily: FONTS.heading,
+      fontSize: SIZES.h3,
+      color: colors.primaryText,
+      marginBottom: SPACING.sm,
+    },
+    card: {
+      flexDirection: "row",
+      backgroundColor: colors.surface,
+      borderRadius: RADIUS.md,
+      padding: SPACING.md,
+      marginBottom: SPACING.md,
+      borderWidth: 1,
+      borderColor: colors.border,
+      ...SHADOWS.card,
+    },
+    iconCircle: {
+      width: 40,
+      height: 40,
+      borderRadius: 20,
+      backgroundColor: colors.secondary,
+      alignItems: "center",
+      justifyContent: "center",
+    },
+    cardBody: { flex: 1, marginLeft: SPACING.md },
+    cardHeader: {
+      flexDirection: "row",
+      justifyContent: "space-between",
+      alignItems: "flex-start",
+      gap: SPACING.sm,
+    },
+    cardTitle: {
+      flex: 1,
+      fontFamily: FONTS.heading,
+      fontSize: SIZES.body,
+      color: colors.primaryText,
+    },
+    price: {
+      fontFamily: FONTS.heading,
+      fontSize: SIZES.body,
+      color: colors.secondary,
+    },
+    row: {
+      flexDirection: "row",
+      alignItems: "center",
+      gap: SPACING.xs,
+      marginTop: 4,
+    },
+    cardText: { ...typography.small, color: colors.text, flexShrink: 1 },
+    cardActions: {
+      flexDirection: "row",
+      justifyContent: "flex-end",
+      gap: SPACING.md,
+      marginTop: SPACING.xs,
+    },
+    totalBox: {
+      flexDirection: "row",
+      justifyContent: "space-between",
+      alignItems: "center",
+      padding: SPACING.md,
+      borderRadius: RADIUS.md,
+      backgroundColor: colors.surfaceAlt,
+    },
+    totalLabel: {
+      fontFamily: FONTS.heading,
+      fontSize: SIZES.body,
+      color: colors.primaryText,
+    },
+    totalAmount: {
+      fontFamily: FONTS.heading,
+      fontSize: SIZES.h2,
+      color: colors.accent,
+    },
+    confirmButton: {
+      height: 48,
+      borderRadius: RADIUS.md,
+      backgroundColor: colors.accent,
+      alignItems: "center",
+      justifyContent: "center",
+      marginTop: SPACING.md,
+    },
+    empty: { alignItems: "center", padding: SPACING.xl },
+    emptyText: {
+      ...typography.body,
+      color: colors.textMuted,
+      textAlign: "center",
+      marginTop: SPACING.sm,
+    },
+  });

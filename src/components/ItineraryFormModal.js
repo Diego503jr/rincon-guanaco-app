@@ -10,14 +10,9 @@ import {
   StyleSheet,
 } from "react-native";
 import { Ionicons } from "@expo/vector-icons";
-import {
-  COLORS,
-  FONTS,
-  SIZES,
-  SPACING,
-  RADIUS,
-  TYPOGRAPHY,
-} from "../constants/theme";
+import { FONTS, SIZES, SPACING, RADIUS } from "../constants/theme";
+import { useTheme } from "../context/ThemeContext";
+import { useThemedStyles } from "../hooks/useThemedStyles";
 
 // Color del botón "Cancelar" de los modales del Figma
 const CANCEL_COLOR = "#F47C7C";
@@ -34,6 +29,9 @@ export default function ItineraryFormModal({
   onCancel,
   onSubmit,
 }) {
+  const { colors, typography } = useTheme(); // para íconos y estilos en línea
+  const styles = useThemedStyles(createStyles); // para los estilos
+
   const [title, setTitle] = useState(initialTitle);
   const [localError, setLocalError] = useState(null);
 
@@ -69,7 +67,7 @@ export default function ItineraryFormModal({
             onPress={onCancel}
             hitSlop={10}
           >
-            <Ionicons name="close" size={22} color={COLORS.accent} />
+            <Ionicons name="close" size={22} color={colors.accent} />
           </TouchableOpacity>
 
           <Text style={styles.title}>
@@ -80,7 +78,7 @@ export default function ItineraryFormModal({
           <TextInput
             style={[styles.input, (localError || error) && styles.inputError]}
             placeholder="Ej. Itinerario Playa"
-            placeholderTextColor={COLORS.textMuted}
+            placeholderTextColor={colors.textMuted}
             value={title}
             onChangeText={(text) => {
               setTitle(text);
@@ -101,22 +99,22 @@ export default function ItineraryFormModal({
               onPress={onCancel}
               disabled={loading}
             >
-              <Text style={TYPOGRAPHY.button}>Cancelar</Text>
+              <Text style={typography.button}>Cancelar</Text>
             </TouchableOpacity>
 
             <TouchableOpacity
               style={[
                 styles.button,
-                { backgroundColor: COLORS.accent },
+                { backgroundColor: colors.accent },
                 loading && styles.disabled,
               ]}
               onPress={submit}
               disabled={loading}
             >
               {loading ? (
-                <ActivityIndicator color={COLORS.white} />
+                <ActivityIndicator color={colors.onAccent} />
               ) : (
-                <Text style={TYPOGRAPHY.button}>
+                <Text style={typography.button}>
                   {customLabel ?? (isEdit ? "Actualizar" : "Agregar")}
                 </Text>
               )}
@@ -128,61 +126,62 @@ export default function ItineraryFormModal({
   );
 }
 
-const styles = StyleSheet.create({
-  overlay: {
-    flex: 1,
-    backgroundColor: "rgba(0,0,0,0.45)",
-    justifyContent: "center",
-    padding: SPACING.lg,
-  },
-  card: {
-    backgroundColor: COLORS.white,
-    borderRadius: RADIUS.lg,
-    padding: SPACING.lg,
-  },
-  close: {
-    position: "absolute",
-    top: SPACING.md,
-    right: SPACING.md,
-    zIndex: 1,
-  },
-  title: {
-    fontFamily: FONTS.heading,
-    fontSize: SIZES.h2,
-    color: COLORS.primary,
-    textAlign: "center",
-    marginBottom: SPACING.lg,
-  },
-  label: { ...TYPOGRAPHY.body, marginBottom: SPACING.sm },
-  input: {
-    height: 48,
-    borderWidth: 1,
-    borderColor: COLORS.primary,
-    borderRadius: RADIUS.md,
-    backgroundColor: COLORS.white,
-    paddingHorizontal: SPACING.md,
-    fontFamily: FONTS.body,
-    fontSize: SIZES.body,
-    color: COLORS.text,
-  },
-  inputError: { borderColor: COLORS.accent },
-  errorText: {
-    ...TYPOGRAPHY.small,
-    color: COLORS.accent,
-    marginTop: SPACING.xs,
-  },
-  actions: {
-    flexDirection: "row",
-    justifyContent: "space-between",
-    gap: SPACING.md,
-    marginTop: SPACING.xl,
-  },
-  button: {
-    flex: 1,
-    height: 44,
-    borderRadius: RADIUS.md,
-    alignItems: "center",
-    justifyContent: "center",
-  },
-  disabled: { opacity: 0.7 },
-});
+const createStyles = ({ colors, typography }) =>
+  StyleSheet.create({
+    overlay: {
+      flex: 1,
+      backgroundColor: "rgba(0,0,0,0.45)",
+      justifyContent: "center",
+      padding: SPACING.lg,
+    },
+    card: {
+      backgroundColor: colors.surface,
+      borderRadius: RADIUS.lg,
+      padding: SPACING.lg,
+    },
+    close: {
+      position: "absolute",
+      top: SPACING.md,
+      right: SPACING.md,
+      zIndex: 1,
+    },
+    title: {
+      fontFamily: FONTS.heading,
+      fontSize: SIZES.h2,
+      color: colors.primaryText,
+      textAlign: "center",
+      marginBottom: SPACING.lg,
+    },
+    label: { ...typography.body, marginBottom: SPACING.sm },
+    input: {
+      height: 48,
+      borderWidth: 1,
+      borderColor: colors.primaryText,
+      borderRadius: RADIUS.md,
+      backgroundColor: colors.surface,
+      paddingHorizontal: SPACING.md,
+      fontFamily: FONTS.body,
+      fontSize: SIZES.body,
+      color: colors.text,
+    },
+    inputError: { borderColor: colors.accent },
+    errorText: {
+      ...typography.small,
+      color: colors.accent,
+      marginTop: SPACING.xs,
+    },
+    actions: {
+      flexDirection: "row",
+      justifyContent: "space-between",
+      gap: SPACING.md,
+      marginTop: SPACING.xl,
+    },
+    button: {
+      flex: 1,
+      height: 44,
+      borderRadius: RADIUS.md,
+      alignItems: "center",
+      justifyContent: "center",
+    },
+    disabled: { opacity: 0.7 },
+  });

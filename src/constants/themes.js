@@ -4,13 +4,15 @@ import { COLORS, TYPOGRAPHY } from "./theme";
 export const LIGHT_COLORS = {
   ...COLORS,
   background: COLORS.background ?? "#F8F9FA",
-  surface: COLORS.white,       // tarjetas, inputs, modales
-  surfaceAlt: "#EEF1F4",       // chips, filas alternas
-  border: "#D5DBE1",
+  surface: COLORS.white, // tarjetas, inputs, modales
+  surfaceAlt: "#EEF1F4", // chips, filas alternas
+  border: COLORS.border ?? "#D5DBE1",
   primaryText: COLORS.primary, // primary cuando se usa como texto/ícono/enlace
-  onAccent: "#FFFFFF",         // texto sobre botones naranja
+  onAccent: "#FFFFFF", // texto sobre botones naranja
   error: "#D62839",
   overlay: "rgba(0,0,0,0.45)",
+  accentSoft: "#FDE3D3",
+  secondarySoft: "#E6F4F2",
 };
 
 // Oscuro: lo que no se redefine aquí conserva el valor de COLORS
@@ -22,13 +24,15 @@ export const DARK_COLORS = {
   text: "#E8ECF1",
   textMuted: "#9AA7B5",
   border: "#2A3B52",
-  primary: "#0B2545",          // headers y fondos (igual que en claro)
-  primaryText: "#8DB4F0",      // el azul añil no se lee sobre fondo oscuro
+  primary: "#0B2545", // headers y fondos (igual que en claro)
+  primaryText: "#8DB4F0", // el azul añil no se lee sobre fondo oscuro
   accent: "#F26419",
   onAccent: "#FFFFFF",
   error: "#FF6B6B",
   overlay: "rgba(0,0,0,0.65)",
   white: "#FFFFFF",
+  accentSoft: "#4A2A18",
+  secondarySoft: "#173A35",
 };
 
 // TYPOGRAPHY trae colores fijos (texto oscuro): los reemplaza según el tema
@@ -43,6 +47,6 @@ export function buildTypography(colors) {
     Object.entries(TYPOGRAPHY).map(([key, style]) => [
       key,
       { ...style, color: colorMap[style.color] ?? style.color },
-    ])
+    ]),
   );
 }

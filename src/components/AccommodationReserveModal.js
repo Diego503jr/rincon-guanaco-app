@@ -10,7 +10,9 @@ import {
   StyleSheet,
 } from "react-native";
 import { Ionicons } from "@expo/vector-icons";
-import { COLORS, FONTS, SIZES, SPACING, RADIUS, TYPOGRAPHY } from "../constants/theme";
+import { FONTS, SIZES, SPACING, RADIUS } from "../constants/theme";
+import { useTheme } from "../context/ThemeContext";
+import { useThemedStyles } from "../hooks/useThemedStyles";
 import { DaySelector, CounterField, FieldLabel, TotalRow } from "./ReservationFields";
 import { formatTime, nightsBetween, parseDateTime, toDateKey } from "../utils/dates";
 
@@ -37,6 +39,9 @@ export default function AccommodationReserveModal({
   onCancel,
   onSubmit,
 }) {
+  const { colors, typography } = useTheme();     // para íconos y estilos en línea
+  const styles = useThemedStyles(createStyles);  // para los estilos
+
   const today = toDateKey(new Date());
   const [checkIn, setCheckIn] = useState(today);
   const [checkOut, setCheckOut] = useState(addDays(today, 1));
@@ -81,7 +86,7 @@ export default function AccommodationReserveModal({
       <Pressable style={styles.overlay} onPress={onCancel}>
         <Pressable style={styles.card} onPress={() => {}}>
           <TouchableOpacity style={styles.close} onPress={onCancel} hitSlop={10}>
-            <Ionicons name="close" size={22} color={COLORS.accent} />
+            <Ionicons name="close" size={22} color={colors.accent} />
           </TouchableOpacity>
 
           <ScrollView showsVerticalScrollIndicator={false}>
@@ -89,11 +94,11 @@ export default function AccommodationReserveModal({
 
             <View style={styles.header}>
               <View style={styles.iconCircle}>
-                <Ionicons name="bed-outline" size={22} color={COLORS.white} />
+                <Ionicons name="bed-outline" size={22} color={colors.onAccent} />
               </View>
               <View style={{ flex: 1 }}>
                 <Text style={styles.name}>{accommodation.name || "Alojamiento"}</Text>
-                <Text style={TYPOGRAPHY.small}>
+                <Text style={typography.small}>
                   ${price.toFixed(2)} por noche{accommodation.type ? ` · ${accommodation.type}` : ""}
                 </Text>
               </View>
@@ -123,18 +128,18 @@ export default function AccommodationReserveModal({
                 onPress={onCancel}
                 disabled={loading}
               >
-                <Text style={TYPOGRAPHY.button}>Cancelar</Text>
+                <Text style={typography.button}>Cancelar</Text>
               </TouchableOpacity>
 
               <TouchableOpacity
-                style={[styles.button, { backgroundColor: COLORS.accent }, (loading || nights < 1) && styles.disabled]}
+                style={[styles.button, { backgroundColor: colors.accent }, (loading || nights < 1) && styles.disabled]}
                 onPress={submit}
                 disabled={loading || nights < 1}
               >
                 {loading ? (
-                  <ActivityIndicator color={COLORS.white} />
+                  <ActivityIndicator color={colors.onAccent} />
                 ) : (
-                  <Text style={TYPOGRAPHY.button}>{isEdit ? "Actualizar" : "Agregar"}</Text>
+                  <Text style={typography.button}>{isEdit ? "Actualizar" : "Agregar"}</Text>
                 )}
               </TouchableOpacity>
             </View>
@@ -145,52 +150,53 @@ export default function AccommodationReserveModal({
   );
 }
 
-const styles = StyleSheet.create({
-  overlay: {
-    flex: 1,
-    backgroundColor: "rgba(0,0,0,0.45)",
-    justifyContent: "center",
-    padding: SPACING.lg,
-  },
-  card: {
-    backgroundColor: COLORS.white,
-    borderRadius: RADIUS.lg,
-    padding: SPACING.lg,
-    maxHeight: "90%",
-  },
-  close: { position: "absolute", top: SPACING.md, right: SPACING.md, zIndex: 1 },
-  title: {
-    fontFamily: FONTS.heading,
-    fontSize: SIZES.h2,
-    color: COLORS.primary,
-    textAlign: "center",
-    marginBottom: SPACING.md,
-  },
-  header: { flexDirection: "row", alignItems: "center", gap: SPACING.md },
-  iconCircle: {
-    width: 44,
-    height: 44,
-    borderRadius: 22,
-    backgroundColor: COLORS.secondary,
-    alignItems: "center",
-    justifyContent: "center",
-  },
-  name: { fontFamily: FONTS.heading, fontSize: SIZES.h3, color: COLORS.primary },
-  description: { ...TYPOGRAPHY.body, color: COLORS.textMuted, marginTop: SPACING.sm },
-  schedule: { ...TYPOGRAPHY.small, color: COLORS.secondary, marginTop: SPACING.xs },
-  errorText: { ...TYPOGRAPHY.small, color: COLORS.accent, marginTop: SPACING.sm, textAlign: "center" },
-  actions: {
-    flexDirection: "row",
-    justifyContent: "space-between",
-    gap: SPACING.md,
-    marginTop: SPACING.lg,
-  },
-  button: {
-    flex: 1,
-    height: 44,
-    borderRadius: RADIUS.md,
-    alignItems: "center",
-    justifyContent: "center",
-  },
-  disabled: { opacity: 0.6 },
-});
+const createStyles = ({ colors, typography }) =>
+  StyleSheet.create({
+    overlay: {
+      flex: 1,
+      backgroundColor: "rgba(0,0,0,0.45)",
+      justifyContent: "center",
+      padding: SPACING.lg,
+    },
+    card: {
+      backgroundColor: colors.surface,
+      borderRadius: RADIUS.lg,
+      padding: SPACING.lg,
+      maxHeight: "90%",
+    },
+    close: { position: "absolute", top: SPACING.md, right: SPACING.md, zIndex: 1 },
+    title: {
+      fontFamily: FONTS.heading,
+      fontSize: SIZES.h2,
+      color: colors.primaryText,
+      textAlign: "center",
+      marginBottom: SPACING.md,
+    },
+    header: { flexDirection: "row", alignItems: "center", gap: SPACING.md },
+    iconCircle: {
+      width: 44,
+      height: 44,
+      borderRadius: 22,
+      backgroundColor: colors.secondary,
+      alignItems: "center",
+      justifyContent: "center",
+    },
+    name: { fontFamily: FONTS.heading, fontSize: SIZES.h3, color: colors.primaryText },
+    description: { ...typography.body, color: colors.textMuted, marginTop: SPACING.sm },
+    schedule: { ...typography.small, color: colors.secondary, marginTop: SPACING.xs },
+    errorText: { ...typography.small, color: colors.accent, marginTop: SPACING.sm, textAlign: "center" },
+    actions: {
+      flexDirection: "row",
+      justifyContent: "space-between",
+      gap: SPACING.md,
+      marginTop: SPACING.lg,
+    },
+    button: {
+      flex: 1,
+      height: 44,
+      borderRadius: RADIUS.md,
+      alignItems: "center",
+      justifyContent: "center",
+    },
+    disabled: { opacity: 0.6 },
+  });

@@ -15,7 +15,7 @@ export const authService = {
 
   me: async () => {
     const { data } = await api.get(ENDPOINTS.auth.me);
-    return data.user ?? data;
+    return data.user ?? data.data ?? data;
   },
 
   logout: async () => {

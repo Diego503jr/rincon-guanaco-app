@@ -12,6 +12,10 @@ import { setUnauthorizedHandler } from "../api/client";
 
 const UserContext = createContext(null);
 
+// Desenvuelve { user }, { data } o el objeto directo
+export const unwrapUser = (payload) =>
+  payload?.user ?? payload?.data ?? payload;
+
 export function UserProvider({ children }) {
   const [user, setUser] = useState(null);
   const [token, setToken] = useState(null);
@@ -33,6 +37,14 @@ export function UserProvider({ children }) {
     [],
   );
 
+  // Mezcla los datos nuevos con el usuario guardado (no pierde campos como phone o traveler_type)
+  const updateUser = useCallback(async (payload) => {
+    const incoming = unwrapUser(payload);
+    const merged = { ...((await storage.getUser()) ?? {}), ...incoming };
+    await storage.setUser(merged);
+    setUser(merged);
+  }, []);
+
   // Al abrir la app: restaura la sesión guardada y la valida con /me
   useEffect(() => {
     setUnauthorizedHandler(clearSession);
@@ -48,8 +60,7 @@ export function UserProvider({ children }) {
 
         try {
           const freshUser = await authService.me();
-          await storage.setUser(freshUser);
-          setUser(freshUser);
+          await updateUser(freshUser);
         } catch {
           // 401: el interceptor ya cerró la sesión.
           // Sin internet: se conserva el usuario guardado.
@@ -58,7 +69,7 @@ export function UserProvider({ children }) {
         setLoading(false);
       }
     })();
-  }, [clearSession]);
+  }, [clearSession, updateUser]);
 
   const login = useCallback(
     async (email, password) => {
@@ -69,14 +80,10 @@ export function UserProvider({ children }) {
     [saveSession],
   );
 
-  const register = useCallback(
-    async (payload) => {
-      const data = await authService.register(payload);
-      await saveSession(data);
-      return data.user;
-    },
-    [saveSession],
-  );
+  const register = useCallback(async (payload) => {
+    const data = await authService.register(payload);
+    return unwrapUser(data);
+  }, []);
 
   const logout = useCallback(async () => {
     try {
@@ -97,8 +104,9 @@ export function UserProvider({ children }) {
       register,
       logout,
       setUser,
+      updateUser,
     }),
-    [user, token, loading, login, register, logout],
+    [user, token, loading, login, register, logout, updateUser],
   );
 
   return <UserContext.Provider value={value}>{children}</UserContext.Provider>;

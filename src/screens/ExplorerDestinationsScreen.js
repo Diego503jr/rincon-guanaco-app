@@ -33,6 +33,7 @@ const CATEGORIES = [
 
 const BASE_URL =
   process.env.EXPO_PUBLIC_API_URL ?? "http://192.168.0.14:8000/api";
+  const SERVER_ROOT = BASE_URL.replace("/api", "");
 
 export default function ExplorerDestinationsScreen({ navigation }) {
   const { colors, isDark } = useTheme(); // para íconos y colores en línea
@@ -138,6 +139,8 @@ export default function ExplorerDestinationsScreen({ navigation }) {
     );
   };
 
+
+
   const baseList = isNearbyActive ? nearbyData : (data?.data ?? data ?? []);
 
   const filteredDestinations = baseList.filter((item) => {
@@ -148,6 +151,24 @@ export default function ExplorerDestinationsScreen({ navigation }) {
       selectedCategory === "todos" || item.category === selectedCategory;
     return matchesSearch && matchesCategory;
   });
+
+  const resolveImageUri = (item) => {
+    const rawImage = item.image_url || item.image || item.imagen || item.photo || item.foto;
+    
+    if (!rawImage) {
+      return "https://images.unsplash.com/photo-1507525428034-b723cf961d3e"; // Imagen por defecto
+    }
+    // Si ya viene con http completo
+    if (rawImage.startsWith("http://") || rawImage.startsWith("https://")) {
+      return rawImage;
+    }
+    // Si empieza con barra diagonal
+    if (rawImage.startsWith("/")) {
+      return `${SERVER_ROOT}${rawImage}`;
+    }
+    // Si es una ruta relativa pura guardada en base de datos
+    return `${SERVER_ROOT}/storage/${rawImage}`;
+  };
 
   const renderDestinationItem = ({ item }) => (
     <TouchableOpacity
@@ -171,11 +192,7 @@ export default function ExplorerDestinationsScreen({ navigation }) {
 
       <View style={styles.cardBodyContainer}>
         <Image
-          source={{
-            uri:
-              item.image_url ||
-              "https://images.unsplash.com/photo-1507525428034-b723cf961d3e",
-          }}
+          source={{ uri: resolveImageUri(item) }}
           style={styles.cardImage}
         />
         <View style={styles.cardInfo}>

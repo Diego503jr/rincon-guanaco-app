@@ -101,7 +101,7 @@ const RegisterScreen = () => {
     setErrors({});
 
     try {
-      await register({
+      const newUser = await register({
         name: `${nombre.trim()} ${apellido.trim()}`,
         email: email.trim(),
         password,
@@ -109,7 +109,15 @@ const RegisterScreen = () => {
         traveler_type: tipoViajero,
         country_of_origin: pais,
       });
-      // Sin navigate: al guardarse la sesión, StackNavigation cambia al Home solo
+
+      // Solo navega si realmente llegó un usuario (objeto con id)
+      if (newUser && typeof newUser === "object" && newUser.id) {
+        navigation.replace("Login");
+      } else {
+        setErrors({
+          general: "No se pudo completar el registro. Intenta de nuevo.",
+        });
+      }
     } catch (error) {
       const serverErrors = error.response?.data?.errors;
       if (serverErrors) {

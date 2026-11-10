@@ -1,8 +1,21 @@
 import { useCallback, useState } from "react";
-import { View, Text, FlatList, Image, TouchableOpacity, RefreshControl, ActivityIndicator, Alert, StyleSheet, ScrollView,} from "react-native";
+import {
+  View,
+  Text,
+  FlatList,
+  Image,
+  TouchableOpacity,
+  RefreshControl,
+  ActivityIndicator,
+  Alert,
+  StyleSheet,
+  ScrollView,
+} from "react-native";
 import { useFocusEffect } from "@react-navigation/native";
 import { Ionicons } from "@expo/vector-icons";
-import { COLORS, FONTS, SIZES, SPACING, RADIUS, SHADOWS, TYPOGRAPHY,} from "../constants/theme";
+import { FONTS, SIZES, SPACING, RADIUS, SHADOWS } from "../constants/theme";
+import { useTheme } from "../context/ThemeContext";
+import { useThemedStyles } from "../hooks/useThemedStyles";
 import useApi from "../hooks/useApi";
 import { itineraryService } from "../api/services/itineraryService";
 import { getErrorMessage } from "../api/errors";
@@ -12,17 +25,23 @@ import ItineraryDetailModal from "../components/ItineraryDetailModal";
 import { formatRange } from "../utils/dates";
 
 export default function ItinerariesScreen() {
+  const { colors } = useTheme(); // para íconos y colores en línea
+  const styles = useThemedStyles(createStyles); // para los estilos
   const { data, loading, error, execute } = useApi(itineraryService.getAll);
   const itineraries = data ?? [];
 
   const [tab, setTab] = useState("activities"); // "activities" | "accommodations"
   const [refreshing, setRefreshing] = useState(false);
-  
+
   // Estado para el ordenamiento ("recent" | "oldest")
   const [sortBy, setSortBy] = useState("recent");
 
   // Modal de crear / renombrar
-  const [form, setForm] = useState({ visible: false, mode: "create", item: null });
+  const [form, setForm] = useState({
+    visible: false,
+    mode: "create",
+    item: null,
+  });
   const [saving, setSaving] = useState(false);
   const [formError, setFormError] = useState(null);
 
@@ -66,7 +85,7 @@ export default function ItinerariesScreen() {
   };
 
   const openEdit = (item) => {
-    if (item.is_completed) return; 
+    if (item.is_completed) return;
     setFormError(null);
     setForm({ visible: true, mode: "edit", item });
   };
@@ -104,7 +123,9 @@ export default function ItinerariesScreen() {
           text: "Sí",
           onPress: async () => {
             try {
-              await itineraryService.update(item.id, { is_completed: completing });
+              await itineraryService.update(item.id, {
+                is_completed: completing,
+              });
               await execute();
               if (completing) {
                 Alert.alert(
@@ -122,7 +143,7 @@ export default function ItinerariesScreen() {
   };
 
   const confirmDelete = (item) => {
-    if (item.is_completed) return; 
+    if (item.is_completed) return;
     Alert.alert(
       "¿Eliminar itinerario?",
       `Se eliminará "${item.title}" con todas sus actividades y alojamientos.`,
@@ -148,18 +169,16 @@ export default function ItinerariesScreen() {
     <View style={[styles.card, item.is_completed && styles.cardCompleted]}>
       {/* 1. ENCABEZADO: Si está completado, el botón del checkbox está deshabilitado */}
       <View style={styles.cardHeader}>
-        <Text style={styles.cardTitle}>
-          {item.title}
-        </Text>
-        <TouchableOpacity 
-          onPress={() => toggleCompleted(item)} 
+        <Text style={styles.cardTitle}>{item.title}</Text>
+        <TouchableOpacity
+          onPress={() => toggleCompleted(item)}
           hitSlop={10}
           disabled={item.is_completed} // <-- Desactiva el clic en el checkbox si ya está completado
         >
           <Ionicons
             name={item.is_completed ? "checkbox" : "square-outline"}
             size={22}
-            color={item.is_completed ? COLORS.textMuted : COLORS.secondary}
+            color={item.is_completed ? colors.textMuted : colors.secondary}
           />
         </TouchableOpacity>
       </View>
@@ -170,17 +189,20 @@ export default function ItinerariesScreen() {
           <Image source={{ uri: item.cover_image }} style={styles.cardImage} />
         ) : (
           <View style={[styles.cardImage, styles.imagePlaceholder]}>
-            <Ionicons name="map-outline" size={32} color={COLORS.secondary} />
+            <Ionicons name="map-outline" size={32} color={colors.secondary} />
           </View>
         )}
 
         <View style={styles.cardBody}>
-          <Text style={styles.cardText}>{formatRange(item.start_date, item.end_date)}</Text>
+          <Text style={styles.cardText}>
+            {formatRange(item.start_date, item.end_date)}
+          </Text>
           <Text style={styles.cardText} numberOfLines={1}>
             {item.location ?? "Agrega actividades a tu viaje"}
           </Text>
           <Text style={styles.cardText}>
-            {item.activities_count} {item.activities_count === 1 ? "actividad" : "actividades"}
+            {item.activities_count}{" "}
+            {item.activities_count === 1 ? "actividad" : "actividades"}
             {item.accommodations_count > 0 &&
               ` · ${item.accommodations_count} ${item.accommodations_count === 1 ? "alojamiento" : "alojamientos"}`}
             {` · $${Number(item.total_price).toFixed(2)}`}
@@ -188,14 +210,20 @@ export default function ItinerariesScreen() {
 
           <View style={styles.cardActions}>
             {item.is_completed && <Text style={styles.badge}>Completado</Text>}
-            
+
             {/* Si está completado, se ocultan por completo los botones de editar y eliminar */}
             {!item.is_completed && (
               <>
-                <TouchableOpacity onPress={() => setDetail({ id: item.id, tab })} hitSlop={8}>
+                <TouchableOpacity
+                  onPress={() => setDetail({ id: item.id, tab })}
+                  hitSlop={8}
+                >
                   <Ionicons name="pencil-outline" size={22} color="#1E88E5" />
                 </TouchableOpacity>
-                <TouchableOpacity onPress={() => confirmDelete(item)} hitSlop={8}>
+                <TouchableOpacity
+                  onPress={() => confirmDelete(item)}
+                  hitSlop={8}
+                >
                   <Ionicons name="trash-outline" size={22} color="#F2A900" />
                 </TouchableOpacity>
               </>
@@ -207,20 +235,30 @@ export default function ItinerariesScreen() {
   );
 
   const renderEmpty = () => {
-    if (loading) return <ActivityIndicator style={styles.empty} color={COLORS.primary} />;
-    if (error) return <Text style={[styles.emptyText, { color: COLORS.accent }]}>{error}</Text>;
+    if (loading)
+      return <ActivityIndicator style={styles.empty} color={colors.accent} />;
+    if (error)
+      return (
+        <Text style={[styles.emptyText, { color: colors.accent }]}>
+          {error}
+        </Text>
+      );
     if (tab === "accommodations") {
       return (
         <View style={styles.empty}>
-          <Ionicons name="bed-outline" size={48} color={COLORS.textMuted} />
-          <Text style={styles.emptyText}>Aún no tienes viajes con alojamiento.</Text>
-          <Text style={styles.emptyText}>Reserva uno desde el detalle de un destino.</Text>
+          <Ionicons name="bed-outline" size={48} color={colors.textMuted} />
+          <Text style={styles.emptyText}>
+            Aún no tienes viajes con alojamiento.
+          </Text>
+          <Text style={styles.emptyText}>
+            Reserva uno desde el detalle de un destino.
+          </Text>
         </View>
       );
     }
     return (
       <View style={styles.empty}>
-        <Ionicons name="briefcase-outline" size={48} color={COLORS.textMuted} />
+        <Ionicons name="briefcase-outline" size={48} color={colors.textMuted} />
         <Text style={styles.emptyText}>Aún no tienes itinerarios.</Text>
       </View>
     );
@@ -230,21 +268,53 @@ export default function ItinerariesScreen() {
     <MainLayout title="Mi Itinerario">
       {/* Barra de Filtros de Orden */}
       <View style={styles.filterContainer}>
-        <ScrollView horizontal showsHorizontalScrollIndicator={false} contentContainerStyle={styles.filterScroll}>
+        <ScrollView
+          horizontal
+          showsHorizontalScrollIndicator={false}
+          contentContainerStyle={styles.filterScroll}
+        >
           <TouchableOpacity
-            style={[styles.filterChip, sortBy === "recent" && styles.filterChipActive]}
+            style={[
+              styles.filterChip,
+              sortBy === "recent" && styles.filterChipActive,
+            ]}
             onPress={() => setSortBy("recent")}
           >
-            <Ionicons name="time-outline" size={16} color={sortBy === "recent" ? COLORS.white : COLORS.text} />
-            <Text style={[styles.filterText, sortBy === "recent" && styles.filterTextActive]}>Más recientes</Text>
+            <Ionicons
+              name="time-outline"
+              size={16}
+              color={sortBy === "recent" ? colors.onAccent : colors.text}
+            />
+            <Text
+              style={[
+                styles.filterText,
+                sortBy === "recent" && styles.filterTextActive,
+              ]}
+            >
+              Más recientes
+            </Text>
           </TouchableOpacity>
 
           <TouchableOpacity
-            style={[styles.filterChip, sortBy === "oldest" && styles.filterChipActive]}
+            style={[
+              styles.filterChip,
+              sortBy === "oldest" && styles.filterChipActive,
+            ]}
             onPress={() => setSortBy("oldest")}
           >
-            <Ionicons name="calendar-outline" size={16} color={sortBy === "oldest" ? COLORS.white : COLORS.text} />
-            <Text style={[styles.filterText, sortBy === "oldest" && styles.filterTextActive]}>Más antiguos</Text>
+            <Ionicons
+              name="calendar-outline"
+              size={16}
+              color={sortBy === "oldest" ? colors.onAccent : colors.text}
+            />
+            <Text
+              style={[
+                styles.filterText,
+                sortBy === "oldest" && styles.filterTextActive,
+              ]}
+            >
+              Más antiguos
+            </Text>
           </TouchableOpacity>
         </ScrollView>
       </View>
@@ -256,7 +326,11 @@ export default function ItinerariesScreen() {
         ListEmptyComponent={renderEmpty}
         contentContainerStyle={styles.list}
         refreshControl={
-          <RefreshControl refreshing={refreshing} onRefresh={onRefresh} colors={[COLORS.primary]} />
+          <RefreshControl
+            refreshing={refreshing}
+            onRefresh={onRefresh}
+            colors={[colors.accent]}
+          />
         }
       />
 
@@ -280,111 +354,117 @@ export default function ItinerariesScreen() {
   );
 }
 
-const styles = StyleSheet.create({
-  filterContainer: {
-    paddingVertical: SPACING.sm,
-    borderBottomWidth: 1,
-    borderBottomColor: COLORS.border,
-    backgroundColor: COLORS.white,
-  },
-  filterScroll: {
-    paddingHorizontal: SPACING.md,
-    gap: SPACING.sm,
-    alignItems: "center",
-  },
-  filterChip: {
-    flexDirection: "row",
-    gap: 6,
-    paddingHorizontal: 35,
-    paddingVertical: SPACING.xs,
-    borderRadius: RADIUS.pill,
-    backgroundColor: COLORS.background,
-    borderWidth: 1,
-    borderColor: COLORS.border,
-  },
-  filterChipActive: {
-    backgroundColor: COLORS.accent,
-    borderColor: COLORS.accent,
-  },
-  filterText: {
-    fontFamily: FONTS.body,
-    fontSize: SIZES.small,
-    color: COLORS.text,
-  },
-  filterTextActive: {
-    color: COLORS.white,
-    fontFamily: FONTS.heading,
-  },
-  list: { padding: SPACING.md, paddingBottom: 96, gap: SPACING.md, flexGrow: 1 },
-  card: {
-    backgroundColor: COLORS.white,
-    borderRadius: RADIUS.md,
-    padding: SPACING.md,
-    marginBottom: SPACING.sm,
-    borderWidth: 1,
-    borderColor: COLORS.border,
-    ...SHADOWS.card,
-  },
-  cardCompleted: { opacity: 0.6 },
-  cardHeader: {
-    flexDirection: "row",
-    alignItems: "center",
-    justifyContent: "space-between",
-    marginBottom: SPACING.sm,
-  },
-  cardTitle: {
-    flex: 1,
-    fontFamily: FONTS.heading,
-    fontSize: SIZES.h3,
-    color: COLORS.primary,
-    marginRight: SPACING.xs,
-  },
-  cardBodyContainer: {
-    flexDirection: "row",
-  },
-  cardImage: {
-    width: 110,
-    height: 95,
-    borderRadius: RADIUS.sm,
-  },
-  imagePlaceholder: {
-    backgroundColor: COLORS.background,
-    alignItems: "center",
-    justifyContent: "center",
-  },
-  cardBody: {
-    flex: 1,
-    marginLeft: SPACING.sm,
-    justifyContent: "space-between",
-  },
-  cardText: {
-    ...TYPOGRAPHY.small,
-    color: COLORS.text,
-    marginTop: 2,
-  },
-  cardActions: {
-    flexDirection: "row",
-    justifyContent: "flex-end",
-    alignItems: "center",
-    gap: SPACING.md,
-    marginTop: SPACING.xs,
-  },
-  badge: {
-    ...TYPOGRAPHY.small,
-    color: COLORS.secondary,
-    fontFamily: FONTS.heading,
-    marginRight: "auto",
-  },
-  empty: {
-    flex: 1,
-    alignItems: "center",
-    justifyContent: "center",
-    padding: SPACING.xl,
-  },
-  emptyText: {
-    ...TYPOGRAPHY.body,
-    color: COLORS.textMuted,
-    textAlign: "center",
-    marginTop: SPACING.sm,
-  },
-});
+const createStyles = ({ colors, typography }) =>
+  StyleSheet.create({
+    filterContainer: {
+      paddingVertical: SPACING.sm,
+      borderBottomWidth: 1,
+      borderBottomColor: colors.border,
+      backgroundColor: colors.surface,
+    },
+    filterScroll: {
+      paddingHorizontal: SPACING.md,
+      gap: SPACING.sm,
+      alignItems: "center",
+    },
+    filterChip: {
+      flexDirection: "row",
+      gap: 6,
+      paddingHorizontal: 35,
+      paddingVertical: SPACING.xs,
+      borderRadius: RADIUS.pill,
+      backgroundColor: colors.surfaceAlt,
+      borderWidth: 1,
+      borderColor: colors.border,
+    },
+    filterChipActive: {
+      backgroundColor: colors.accent,
+      borderColor: colors.accent,
+    },
+    filterText: {
+      fontFamily: FONTS.body,
+      fontSize: SIZES.small,
+      color: colors.text,
+    },
+    filterTextActive: {
+      color: colors.onAccent,
+      fontFamily: FONTS.heading,
+    },
+    list: {
+      padding: SPACING.md,
+      paddingBottom: 96,
+      gap: SPACING.md,
+      flexGrow: 1,
+    },
+    card: {
+      backgroundColor: colors.surface,
+      borderRadius: RADIUS.md,
+      padding: SPACING.md,
+      marginBottom: SPACING.sm,
+      borderWidth: 1,
+      borderColor: colors.border,
+      ...SHADOWS.card,
+    },
+    cardCompleted: { opacity: 0.6 },
+    cardHeader: {
+      flexDirection: "row",
+      alignItems: "center",
+      justifyContent: "space-between",
+      marginBottom: SPACING.sm,
+    },
+    cardTitle: {
+      flex: 1,
+      fontFamily: FONTS.heading,
+      fontSize: SIZES.h3,
+      color: colors.primaryText,
+      marginRight: SPACING.xs,
+    },
+    cardBodyContainer: {
+      flexDirection: "row",
+    },
+    cardImage: {
+      width: 110,
+      height: 95,
+      borderRadius: RADIUS.sm,
+    },
+    imagePlaceholder: {
+      backgroundColor: colors.surfaceAlt,
+      alignItems: "center",
+      justifyContent: "center",
+    },
+    cardBody: {
+      flex: 1,
+      marginLeft: SPACING.sm,
+      justifyContent: "space-between",
+    },
+    cardText: {
+      ...typography.small,
+      color: colors.text,
+      marginTop: 2,
+    },
+    cardActions: {
+      flexDirection: "row",
+      justifyContent: "flex-end",
+      alignItems: "center",
+      gap: SPACING.md,
+      marginTop: SPACING.xs,
+    },
+    badge: {
+      ...typography.small,
+      color: colors.secondary,
+      fontFamily: FONTS.heading,
+      marginRight: "auto",
+    },
+    empty: {
+      flex: 1,
+      alignItems: "center",
+      justifyContent: "center",
+      padding: SPACING.xl,
+    },
+    emptyText: {
+      ...typography.body,
+      color: colors.textMuted,
+      textAlign: "center",
+      marginTop: SPACING.sm,
+    },
+  });

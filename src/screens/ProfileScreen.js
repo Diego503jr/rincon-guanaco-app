@@ -2,8 +2,10 @@ import { useCallback, useState } from "react";
 import { View, Text, ScrollView, TouchableOpacity, Alert, StyleSheet } from "react-native";
 import { useFocusEffect } from "@react-navigation/native";
 import { Ionicons } from "@expo/vector-icons";
-import { COLORS, FONTS, SIZES, SPACING, RADIUS, SHADOWS, TYPOGRAPHY } from "../constants/theme";
+import { FONTS, SIZES, SPACING, RADIUS, SHADOWS } from "../constants/theme";
 import { useUser } from "../context/UserContext";
+import { useTheme } from "../context/ThemeContext";
+import { useThemedStyles } from "../hooks/useThemedStyles";
 import { itineraryService } from "../api/services/itineraryService";
 import MainLayout from "../components/MainLayout";
 
@@ -26,6 +28,8 @@ const initials = (name = "") =>
 // Pantalla "Mi Perfil": datos del usuario, resumen de viajes y opciones de la cuenta
 export default function ProfileScreen({ navigation }) {
   const { user, logout } = useUser();
+  const { colors } = useTheme();                 // para íconos y colores en línea
+  const styles = useThemedStyles(createStyles);  // para los estilos
   const [stats, setStats] = useState({ total: 0, active: 0, done: 0 });
 
   // Resumen de viajes (se recalcula cada vez que se abre la pantalla)
@@ -80,7 +84,7 @@ export default function ProfileScreen({ navigation }) {
           <Text style={styles.email}>{user?.email}</Text>
           {traveler && (
             <View style={styles.badge}>
-              <Ionicons name={traveler.icon} size={14} color={COLORS.secondary} />
+              <Ionicons name={traveler.icon} size={14} color={colors.secondary} />
               <Text style={styles.badgeText}>{traveler.label}</Text>
             </View>
           )}
@@ -89,9 +93,9 @@ export default function ProfileScreen({ navigation }) {
         {/* Resumen de viajes */}
         <View style={styles.statsRow}>
           {[
-            { value: stats.total, label: "Viajes", color: COLORS.primary },
-            { value: stats.active, label: "En curso", color: COLORS.accent },
-            { value: stats.done, label: "Completados", color: COLORS.secondary },
+            { value: stats.total, label: "Viajes", color: colors.primaryText },
+            { value: stats.active, label: "En curso", color: colors.accent },
+            { value: stats.done, label: "Completados", color: colors.secondary },
           ].map((s) => (
             <View key={s.label} style={styles.statCard}>
               <Text style={[styles.statValue, { color: s.color }]}>{s.value}</Text>
@@ -106,7 +110,7 @@ export default function ProfileScreen({ navigation }) {
           {infoRows.map((row, i) => (
             <View key={row.label} style={[styles.infoRow, i < infoRows.length - 1 && styles.rowDivider]}>
               <View style={styles.iconBox}>
-                <Ionicons name={row.icon} size={18} color={COLORS.secondary} />
+                <Ionicons name={row.icon} size={18} color={colors.secondary} />
               </View>
               <View style={{ flex: 1 }}>
                 <Text style={styles.infoLabel}>{row.label}</Text>
@@ -126,16 +130,16 @@ export default function ProfileScreen({ navigation }) {
               onPress={opt.onPress}
               activeOpacity={0.7}
             >
-              <Ionicons name={opt.icon} size={20} color={COLORS.primary} />
+              <Ionicons name={opt.icon} size={20} color={colors.primaryText} />
               <Text style={styles.optionText}>{opt.label}</Text>
-              <Ionicons name="chevron-forward" size={18} color={COLORS.textMuted} />
+              <Ionicons name="chevron-forward" size={18} color={colors.textMuted} />
             </TouchableOpacity>
           ))}
         </View>
 
         {/* Cerrar sesión */}
         <TouchableOpacity style={styles.logout} onPress={confirmLogout} activeOpacity={0.85}>
-          <Ionicons name="log-out-outline" size={20} color={COLORS.accent} />
+          <Ionicons name="log-out-outline" size={20} color={colors.accent} />
           <Text style={styles.logoutText}>Cerrar sesión</Text>
         </TouchableOpacity>
 
@@ -145,91 +149,112 @@ export default function ProfileScreen({ navigation }) {
   );
 }
 
-const styles = StyleSheet.create({
-  scroll: { padding: SPACING.md, paddingBottom: SPACING.xl },
+const createStyles = ({ colors, typography, isDark }) => {
+  // En oscuro las sombras casi no se ven: la tarjeta se define con un borde
+  const cardShadow = isDark
+    ? { borderWidth: 1, borderColor: colors.border }
+    : SHADOWS.card;
 
-  hero: {
-    alignItems: "center",
-    backgroundColor: COLORS.white,
-    borderRadius: RADIUS.lg,
-    paddingVertical: SPACING.lg,
-    paddingHorizontal: SPACING.md,
-    ...SHADOWS.card,
-  },
-  avatar: {
-    width: 84,
-    height: 84,
-    borderRadius: 42,
-    backgroundColor: COLORS.accent,
-    alignItems: "center",
-    justifyContent: "center",
-    borderWidth: 4,
-    borderColor: "#FDE3D3",
-  },
-  avatarText: { fontFamily: FONTS.heading, fontSize: 30, color: COLORS.white },
-  name: { fontFamily: FONTS.heading, fontSize: SIZES.h2, color: COLORS.primary, marginTop: SPACING.sm, textAlign: "center" },
-  email: { ...TYPOGRAPHY.body, color: COLORS.textMuted },
-  badge: {
-    flexDirection: "row",
-    alignItems: "center",
-    gap: 4,
-    marginTop: SPACING.sm,
-    paddingVertical: 4,
-    paddingHorizontal: SPACING.md,
-    borderRadius: RADIUS.pill,
-    backgroundColor: "#E6F4F2",
-  },
-  badgeText: { fontFamily: FONTS.heading, fontSize: SIZES.small, color: COLORS.secondary },
+  return StyleSheet.create({
+    scroll: { padding: SPACING.md, paddingBottom: SPACING.xl },
 
-  statsRow: { flexDirection: "row", gap: SPACING.sm, marginTop: SPACING.md },
-  statCard: {
-    flex: 1,
-    alignItems: "center",
-    backgroundColor: COLORS.white,
-    borderRadius: RADIUS.md,
-    paddingVertical: SPACING.md,
-    ...SHADOWS.card,
-  },
-  statValue: { fontFamily: FONTS.heading, fontSize: SIZES.h1 },
-  statLabel: { ...TYPOGRAPHY.small },
+    hero: {
+      alignItems: "center",
+      backgroundColor: colors.surface,
+      borderRadius: RADIUS.lg,
+      paddingVertical: SPACING.lg,
+      paddingHorizontal: SPACING.md,
+      ...cardShadow,
+    },
+    avatar: {
+      width: 84,
+      height: 84,
+      borderRadius: 42,
+      backgroundColor: colors.accent,
+      alignItems: "center",
+      justifyContent: "center",
+      borderWidth: 4,
+      borderColor: colors.accentSoft,
+    },
+    avatarText: { fontFamily: FONTS.heading, fontSize: 30, color: colors.onAccent },
+    name: {
+      fontFamily: FONTS.heading,
+      fontSize: SIZES.h2,
+      color: colors.primaryText,
+      marginTop: SPACING.sm,
+      textAlign: "center",
+    },
+    email: { ...typography.body, color: colors.textMuted },
+    badge: {
+      flexDirection: "row",
+      alignItems: "center",
+      gap: 4,
+      marginTop: SPACING.sm,
+      paddingVertical: 4,
+      paddingHorizontal: SPACING.md,
+      borderRadius: RADIUS.pill,
+      backgroundColor: colors.secondarySoft,
+    },
+    badgeText: { fontFamily: FONTS.heading, fontSize: SIZES.small, color: colors.secondary },
 
-  sectionTitle: {
-    fontFamily: FONTS.heading,
-    fontSize: SIZES.h3,
-    color: COLORS.primary,
-    marginTop: SPACING.lg,
-    marginBottom: SPACING.sm,
-  },
-  card: { backgroundColor: COLORS.white, borderRadius: RADIUS.md, paddingHorizontal: SPACING.md, ...SHADOWS.card },
-  rowDivider: { borderBottomWidth: 1, borderBottomColor: COLORS.border },
+    statsRow: { flexDirection: "row", gap: SPACING.sm, marginTop: SPACING.md },
+    statCard: {
+      flex: 1,
+      alignItems: "center",
+      backgroundColor: colors.surface,
+      borderRadius: RADIUS.md,
+      paddingVertical: SPACING.md,
+      ...cardShadow,
+    },
+    statValue: { fontFamily: FONTS.heading, fontSize: SIZES.h1 },
+    statLabel: { ...typography.small },
 
-  infoRow: { flexDirection: "row", alignItems: "center", gap: SPACING.md, paddingVertical: SPACING.md },
-  iconBox: {
-    width: 36,
-    height: 36,
-    borderRadius: 18,
-    backgroundColor: "#E6F4F2",
-    alignItems: "center",
-    justifyContent: "center",
-  },
-  infoLabel: { ...TYPOGRAPHY.small },
-  infoValue: { ...TYPOGRAPHY.body, color: COLORS.text },
+    sectionTitle: {
+      fontFamily: FONTS.heading,
+      fontSize: SIZES.h3,
+      color: colors.primaryText,
+      marginTop: SPACING.lg,
+      marginBottom: SPACING.sm,
+    },
+    card: {
+      backgroundColor: colors.surface,
+      borderRadius: RADIUS.md,
+      paddingHorizontal: SPACING.md,
+      ...cardShadow,
+    },
+    rowDivider: { borderBottomWidth: 1, borderBottomColor: colors.border },
 
-  optionRow: { flexDirection: "row", alignItems: "center", gap: SPACING.md, paddingVertical: SPACING.md },
-  optionText: { flex: 1, ...TYPOGRAPHY.body, color: COLORS.text },
+    infoRow: { flexDirection: "row", alignItems: "center", gap: SPACING.md, paddingVertical: SPACING.md },
+    iconBox: {
+      width: 36,
+      height: 36,
+      borderRadius: 18,
+      backgroundColor: colors.secondarySoft,
+      alignItems: "center",
+      justifyContent: "center",
+    },
+    infoLabel: { ...typography.small },
+    infoValue: { ...typography.body, color: colors.text },
 
-  logout: {
-    flexDirection: "row",
-    alignItems: "center",
-    justifyContent: "center",
-    gap: SPACING.sm,
-    height: 48,
-    marginTop: SPACING.lg,
-    borderRadius: RADIUS.md,
-    borderWidth: 1.5,
-    borderColor: COLORS.accent,
-    backgroundColor: COLORS.white,
-  },
-  logoutText: { fontFamily: FONTS.heading, fontSize: SIZES.body, color: COLORS.accent },
-  version: { ...TYPOGRAPHY.small, textAlign: "center", marginTop: SPACING.md },
-});
+    appearanceCard: { paddingVertical: SPACING.md },
+    appearanceHint: { ...typography.small, marginBottom: SPACING.sm },
+
+    optionRow: { flexDirection: "row", alignItems: "center", gap: SPACING.md, paddingVertical: SPACING.md },
+    optionText: { flex: 1, ...typography.body, color: colors.text },
+
+    logout: {
+      flexDirection: "row",
+      alignItems: "center",
+      justifyContent: "center",
+      gap: SPACING.sm,
+      height: 48,
+      marginTop: SPACING.lg,
+      borderRadius: RADIUS.md,
+      borderWidth: 1.5,
+      borderColor: colors.accent,
+      backgroundColor: colors.surface,
+    },
+    logoutText: { fontFamily: FONTS.heading, fontSize: SIZES.body, color: colors.accent },
+    version: { ...typography.small, textAlign: "center", marginTop: SPACING.md },
+  });
+};

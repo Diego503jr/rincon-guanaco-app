@@ -7,6 +7,7 @@ const BASE_URL =
 
 // El UserContext registra aquí qué hacer cuando el token ya no sirve
 let onUnauthorized = null;
+let handlingUnauthorized = false;
 export const setUnauthorizedHandler = (fn) => {
   onUnauthorized = fn;
 };
@@ -35,8 +36,19 @@ api.interceptors.response.use(
     const isAuthRoute =
       url === ENDPOINTS.auth.login || url === ENDPOINTS.auth.register;
 
-    if (error.response?.status === 401 && !isAuthRoute && onUnauthorized) {
-      await onUnauthorized();
+    if (
+      error.response?.status === 401 &&
+      !isAuthRoute &&
+      onUnauthorized &&
+      !handlingUnauthorized
+    ) {
+      handlingUnauthorized = true;
+
+      try {
+        await onUnauthorized();
+      } finally {
+        handlingUnauthorized = false;
+      }
     }
     return Promise.reject(error);
   },

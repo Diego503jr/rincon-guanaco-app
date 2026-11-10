@@ -12,7 +12,9 @@ import {
   StyleSheet,
 } from "react-native";
 import { Ionicons } from "@expo/vector-icons";
-import { COLORS, FONTS, SIZES, SPACING, RADIUS, TYPOGRAPHY } from "../constants/theme";
+import { FONTS, SIZES, SPACING, RADIUS } from "../constants/theme";
+import { useTheme } from "../context/ThemeContext";
+import { useThemedStyles } from "../hooks/useThemedStyles";
 import { useUser } from "../context/UserContext";
 import { storage } from "../api/storage";
 import { profileService } from "../api/services/profileService";
@@ -24,6 +26,8 @@ import { COUNTRY_OPTIONS, TRAVELER_TYPES } from "../constants/options_cmb";
 // Tiene dos secciones: Datos personales y Cambiar contraseña.
 // navigation.navigate("EditProfile", { section: "password" }) abre directo en contraseña.
 export default function EditProfileScreen({ route, navigation }) {
+  const { colors, typography } = useTheme(); // para íconos y estilos en línea
+  const styles = useThemedStyles(createStyles); // para los estilos
   const { user, setUser } = useUser();
   const [section, setSection] = useState(route.params?.section ?? "data");
 
@@ -58,7 +62,10 @@ export default function EditProfileScreen({ route, navigation }) {
       });
       await storage.setUser(updated); // la sesión guardada también se actualiza
       setUser(updated);
-      Alert.alert("Perfil actualizado", "Tus datos se guardaron correctamente.");
+      Alert.alert(
+        "Perfil actualizado",
+        "Tus datos se guardaron correctamente.",
+      );
       navigation.goBack();
     } catch (err) {
       setDataError(getErrorMessage(err));
@@ -95,7 +102,10 @@ export default function EditProfileScreen({ route, navigation }) {
         password_confirmation: pass.confirm,
       });
       setPass({ current: "", next: "", confirm: "" });
-      Alert.alert("Contraseña actualizada", "Usa tu nueva contraseña la próxima vez que inicies sesión.");
+      Alert.alert(
+        "Contraseña actualizada",
+        "Usa tu nueva contraseña la próxima vez que inicies sesión.",
+      );
       navigation.goBack();
     } catch (err) {
       setPassError(getErrorMessage(err));
@@ -115,10 +125,14 @@ export default function EditProfileScreen({ route, navigation }) {
           secureTextEntry={!show}
           autoCapitalize="none"
           placeholder="••••••••"
-          placeholderTextColor={COLORS.textMuted}
+          placeholderTextColor={colors.textMuted}
         />
         <TouchableOpacity onPress={() => setShow((s) => !s)} hitSlop={10}>
-          <Ionicons name={show ? "eye-off-outline" : "eye-outline"} size={20} color={COLORS.textMuted} />
+          <Ionicons
+            name={show ? "eye-off-outline" : "eye-outline"}
+            size={20}
+            color={colors.textMuted}
+          />
         </TouchableOpacity>
       </View>
     </>
@@ -128,13 +142,19 @@ export default function EditProfileScreen({ route, navigation }) {
     <View style={styles.mainContainer}>
       {/* BARRA SUPERIOR (igual que el detalle del destino) */}
       <View style={styles.topBar}>
-        <TouchableOpacity style={styles.backButton} onPress={() => navigation.goBack()}>
-          <Ionicons name="arrow-back" size={20} color={COLORS.white} />
+        <TouchableOpacity
+          style={styles.backButton}
+          onPress={() => navigation.goBack()}
+        >
+          <Ionicons name="arrow-back" size={20} color={colors.onAccent} />
         </TouchableOpacity>
         <Text style={styles.topBarTitle}>Editar perfil</Text>
       </View>
 
-      <KeyboardAvoidingView style={{ flex: 1 }} behavior={Platform.OS === "ios" ? "padding" : undefined}>
+      <KeyboardAvoidingView
+        style={{ flex: 1 }}
+        behavior={Platform.OS === "ios" ? "padding" : undefined}
+      >
         <ScrollView
           contentContainerStyle={styles.scrollContainer}
           keyboardShouldPersistTaps="handled"
@@ -151,7 +171,14 @@ export default function EditProfileScreen({ route, navigation }) {
                 style={[styles.tab, section === t.key && styles.tabActive]}
                 onPress={() => setSection(t.key)}
               >
-                <Text style={[styles.tabText, section === t.key && styles.tabTextActive]}>{t.label}</Text>
+                <Text
+                  style={[
+                    styles.tabText,
+                    section === t.key && styles.tabTextActive,
+                  ]}
+                >
+                  {t.label}
+                </Text>
               </TouchableOpacity>
             ))}
           </View>
@@ -184,7 +211,7 @@ export default function EditProfileScreen({ route, navigation }) {
                 onChangeText={(t) => setField("phone", t)}
                 keyboardType="phone-pad"
                 placeholder="Ej. 7000-0000"
-                placeholderTextColor={COLORS.textMuted}
+                placeholderTextColor={colors.textMuted}
                 maxLength={50}
               />
 
@@ -207,7 +234,9 @@ export default function EditProfileScreen({ route, navigation }) {
                 onChange={(v) => setField("traveler_type", v)}
               />
 
-              {dataError ? <Text style={styles.errorText}>{dataError}</Text> : null}
+              {dataError ? (
+                <Text style={styles.errorText}>{dataError}</Text>
+              ) : null}
 
               <TouchableOpacity
                 style={[styles.mainButton, savingData && { opacity: 0.7 }]}
@@ -215,16 +244,20 @@ export default function EditProfileScreen({ route, navigation }) {
                 disabled={savingData}
               >
                 {savingData ? (
-                  <ActivityIndicator color={COLORS.white} />
+                  <ActivityIndicator color={colors.onAccent} />
                 ) : (
-                  <Text style={TYPOGRAPHY.button}>Guardar cambios</Text>
+                  <Text style={typography.button}>Guardar cambios</Text>
                 )}
               </TouchableOpacity>
             </>
           ) : (
             <>
               <View style={styles.note}>
-                <Ionicons name="information-circle-outline" size={18} color={COLORS.secondary} />
+                <Ionicons
+                  name="information-circle-outline"
+                  size={18}
+                  color={colors.secondary}
+                />
                 <Text style={styles.noteText}>
                   Al cambiarla, se cerrará tu sesión en los demás dispositivos.
                 </Text>
@@ -234,7 +267,9 @@ export default function EditProfileScreen({ route, navigation }) {
               {passwordInput("next", "Contraseña nueva (mínimo 8 caracteres)")}
               {passwordInput("confirm", "Confirmar contraseña nueva")}
 
-              {passError ? <Text style={styles.errorText}>{passError}</Text> : null}
+              {passError ? (
+                <Text style={styles.errorText}>{passError}</Text>
+              ) : null}
 
               <TouchableOpacity
                 style={[styles.mainButton, savingPass && { opacity: 0.7 }]}
@@ -242,9 +277,9 @@ export default function EditProfileScreen({ route, navigation }) {
                 disabled={savingPass}
               >
                 {savingPass ? (
-                  <ActivityIndicator color={COLORS.white} />
+                  <ActivityIndicator color={colors.onAccent} />
                 ) : (
-                  <Text style={TYPOGRAPHY.button}>Actualizar contraseña</Text>
+                  <Text style={typography.button}>Actualizar contraseña</Text>
                 )}
               </TouchableOpacity>
             </>
@@ -257,90 +292,101 @@ export default function EditProfileScreen({ route, navigation }) {
   );
 }
 
-const styles = StyleSheet.create({
-  mainContainer: { flex: 1, backgroundColor: COLORS.primary },
-  topBar: {
-    flexDirection: "row",
-    alignItems: "center",
-    paddingHorizontal: 16,
-    paddingTop: 45,
-    paddingBottom: 12,
-  },
-  backButton: {
-    backgroundColor: COLORS.accent,
-    width: 32,
-    height: 32,
-    borderRadius: 16,
-    justifyContent: "center",
-    alignItems: "center",
-  },
-  topBarTitle: { color: COLORS.white, fontSize: 16, fontWeight: "bold", marginLeft: 12 },
-  scrollContainer: {
-    flexGrow: 1,
-    backgroundColor: COLORS.white,
-    borderTopLeftRadius: 24,
-    borderTopRightRadius: 24,
-    paddingHorizontal: 16,
-    paddingTop: 20,
-  },
+const createStyles = ({ colors, typography }) =>
+  StyleSheet.create({
+    mainContainer: { flex: 1, backgroundColor: colors.primary },
+    topBar: {
+      flexDirection: "row",
+      alignItems: "center",
+      paddingHorizontal: 16,
+      paddingTop: 45,
+      paddingBottom: 12,
+    },
+    backButton: {
+      backgroundColor: colors.accent,
+      width: 32,
+      height: 32,
+      borderRadius: 16,
+      justifyContent: "center",
+      alignItems: "center",
+    },
+    topBarTitle: {
+      color: colors.onAccent,
+      fontSize: 16,
+      fontWeight: "bold",
+      marginLeft: 12,
+    },
+    scrollContainer: {
+      flexGrow: 1,
+      backgroundColor: colors.surface,
+      borderTopLeftRadius: 24,
+      borderTopRightRadius: 24,
+      paddingHorizontal: 16,
+      paddingTop: 20,
+    },
 
-  tabs: { flexDirection: "row", gap: SPACING.sm, marginBottom: SPACING.sm },
-  tab: {
-    flex: 1,
-    height: 38,
-    borderRadius: RADIUS.pill,
-    backgroundColor: "#E5E7EB",
-    alignItems: "center",
-    justifyContent: "center",
-  },
-  tabActive: { backgroundColor: COLORS.secondary },
-  tabText: { fontSize: 13, fontWeight: "600", color: COLORS.textMuted },
-  tabTextActive: { color: COLORS.white },
+    tabs: { flexDirection: "row", gap: SPACING.sm, marginBottom: SPACING.sm },
+    tab: {
+      flex: 1,
+      height: 38,
+      borderRadius: RADIUS.pill,
+      backgroundColor: colors.border,
+      alignItems: "center",
+      justifyContent: "center",
+    },
+    tabActive: { backgroundColor: colors.secondary },
+    tabText: { fontSize: 13, fontWeight: "600", color: colors.textMuted },
+    tabTextActive: { color: colors.onAccent },
 
-  label: {
-    fontFamily: FONTS.heading,
-    fontSize: SIZES.body,
-    color: COLORS.primary,
-    marginTop: SPACING.md,
-    marginBottom: SPACING.xs,
-  },
-  input: {
-    height: 46,
-    borderWidth: 1,
-    borderColor: COLORS.border,
-    borderRadius: RADIUS.md,
-    paddingHorizontal: SPACING.md,
-    backgroundColor: COLORS.background,
-    fontFamily: FONTS.body,
-    fontSize: SIZES.body,
-    color: COLORS.text,
-  },
-  inputRow: {
-    flexDirection: "row",
-    alignItems: "center",
-    borderWidth: 1,
-    borderColor: COLORS.border,
-    borderRadius: RADIUS.md,
-    paddingRight: SPACING.md,
-    backgroundColor: COLORS.background,
-  },
-  note: {
-    flexDirection: "row",
-    alignItems: "center",
-    gap: SPACING.sm,
-    padding: SPACING.sm,
-    borderRadius: RADIUS.md,
-    backgroundColor: "#E6F4F2",
-    marginTop: SPACING.xs,
-  },
-  noteText: { ...TYPOGRAPHY.small, color: COLORS.text, flex: 1 },
-  errorText: { ...TYPOGRAPHY.small, color: COLORS.accent, marginTop: SPACING.md, textAlign: "center" },
-  mainButton: {
-    height: 48,
-    borderRadius: RADIUS.md,
-    backgroundColor: COLORS.accent,
-    alignItems: "center",
-    justifyContent: "center",
-    marginTop: SPACING.lg,
-  },
-});
+    label: {
+      fontFamily: FONTS.heading,
+      fontSize: SIZES.body,
+      color: colors.primaryText,
+      marginTop: SPACING.md,
+      marginBottom: SPACING.xs,
+    },
+    input: {
+      height: 46,
+      borderWidth: 1,
+      borderColor: colors.border,
+      borderRadius: RADIUS.md,
+      paddingHorizontal: SPACING.md,
+      backgroundColor: colors.surfaceAlt,
+      fontFamily: FONTS.body,
+      fontSize: SIZES.body,
+      color: colors.text,
+    },
+    inputRow: {
+      flexDirection: "row",
+      alignItems: "center",
+      borderWidth: 1,
+      borderColor: colors.border,
+      borderRadius: RADIUS.md,
+      paddingRight: SPACING.md,
+      backgroundColor: colors.surfaceAlt,
+    },
+    note: {
+      flexDirection: "row",
+      alignItems: "center",
+      gap: SPACING.sm,
+      padding: SPACING.sm,
+      borderRadius: RADIUS.md,
+      backgroundColor: colors.secondarySoft,
+      marginTop: SPACING.xs,
+    },
+    noteText: { ...typography.small, color: colors.text, flex: 1 },
+    errorText: {
+      ...typography.small,
+      color: colors.accent,
+      marginTop: SPACING.md,
+      textAlign: "center",
+    },
+    mainButton: {
+      height: 48,
+      borderRadius: RADIUS.md,
+      backgroundColor: colors.accent,
+      alignItems: "center",
+      justifyContent: "center",
+      marginTop: SPACING.lg,
+    },
+  });

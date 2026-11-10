@@ -14,20 +14,27 @@ import {
 } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
 import MainLayout from '../components/MainLayout';
-import { COLORS, SPACING, RADIUS, FONTS, SHADOWS } from '../constants/theme';
+import { SPACING, RADIUS, FONTS, SHADOWS } from '../constants/theme';
+import { useTheme } from "../context/ThemeContext";
+import { useThemedStyles } from "../hooks/useThemedStyles";
 import client from '../api/client';
 
 export default function SupportScreen() {
+    const { colors, isDark } = useTheme();
+    const styles = useThemedStyles(createStyles);
+
+    // --- ESTADOS DEL MODAL PERSONALIZADO ---
     const [modalVisible, setModalVisible] = useState(false);
     const [modalConfig, setModalConfig] = useState({ title: '', message: '', type: 'success' });
 
-    // Estado para controlar la visibilidad del chat y la altura del teclado
+    // --- ESTADO PARA CONTROLAR LA VISIBILIDAD DEL CHAT ---
     const [chatOpen, setChatOpen] = useState(false);
     const [keyboardHeight, setKeyboardHeight] = useState(0);
 
-    // Scroll automático en el chat
+    // --- REFERENCIA PARA HACER SCROLL AUTOMÁTICO EN EL CHAT ---
     const chatScrollViewRef = useRef(null);
 
+    // --- ESCUCHAS NATIVAS DEL TECLADO ---
     useEffect(() => {
         const showSubscription = Keyboard.addListener(
             Platform.OS === 'ios' ? 'keyboardWillShow' : 'keyboardDidShow',
@@ -51,7 +58,7 @@ export default function SupportScreen() {
         };
     }, []);
 
-    // ACORDEÓN DE FAQ
+    // --- ESTADO 1: ACORDEÓN DE FAQ ---
     const [expandedFaq, setExpandedFaq] = useState(null);
     const faqs = [
         { 
@@ -75,7 +82,7 @@ export default function SupportScreen() {
         setExpandedFaq(expandedFaq === id ? null : id);
     };
 
-    // CHAT SIMULADO
+    // --- ESTADO 2: CHAT SIMULADO ---
     const [chatMessages, setChatMessages] = useState([
         { id: 1, sender: 'bot', text: '¡Hola! Soy el asistente virtual de Rincón Guanaco. ¿En qué puedo ayudarte hoy?' }
     ]);
@@ -121,7 +128,7 @@ export default function SupportScreen() {
         }, 800);
     };
 
-    // FORMULARIO DE COMENTARIOS / CORREO 
+    // --- ESTADO 3: FORMULARIO DE COMENTARIOS / CORREO ---
     const [supportComment, setSupportComment] = useState('');
     const [sending, setSending] = useState(false);
 
@@ -160,7 +167,7 @@ export default function SupportScreen() {
         }
     };
 
-   return (
+    return (
         <MainLayout title="Soporte y Ayuda">
             <View style={{ flex: 1, position: 'relative' }}>
                 <ScrollView 
@@ -184,7 +191,7 @@ export default function SupportScreen() {
                                     <Ionicons 
                                         name={isExpanded ? "chevron-up" : "chevron-down"} 
                                         size={20} 
-                                        color={COLORS.primary} 
+                                        color={colors.primaryText} 
                                     />
                                 </TouchableOpacity>
                                 {isExpanded && (
@@ -207,7 +214,7 @@ export default function SupportScreen() {
                             multiline
                             numberOfLines={4}
                             placeholder="Escribe tu comentario aquí..."
-                            placeholderTextColor={COLORS.textMuted}
+                            placeholderTextColor={colors.textMuted}
                             value={supportComment}
                             onChangeText={setSupportComment}
                             textAlignVertical="top"
@@ -218,7 +225,7 @@ export default function SupportScreen() {
                             disabled={sending}
                         >
                             {sending ? (
-                                <ActivityIndicator color={COLORS.white} />
+                                <ActivityIndicator color={colors.white} />
                             ) : (
                                 <Text style={styles.submitText}>Enviar a Administradores</Text>
                             )}
@@ -237,7 +244,7 @@ export default function SupportScreen() {
                                 <Text style={styles.floatingChatHeaderText}>Asistente Virtual</Text>
                             </View>
                             <TouchableOpacity onPress={() => setChatOpen(false)} style={styles.closeChatButton}>
-                                <Ionicons name="close" size={24} color={COLORS.text} />
+                                <Ionicons name="close" size={24} color={colors.text} />
                             </TouchableOpacity>
                         </View>
 
@@ -273,14 +280,14 @@ export default function SupportScreen() {
                             <TextInput 
                                 style={styles.chatInput}
                                 placeholder="Escribe tu consulta..."
-                                placeholderTextColor={COLORS.textMuted}
+                                placeholderTextColor={colors.textMuted}
                                 value={inputMessage}
                                 onChangeText={setInputMessage}
                                 onSubmitEditing={handleSendMessage}
                                 returnKeyType="send"
                             />
                             <TouchableOpacity style={styles.sendButton} onPress={handleSendMessage}>
-                                <Ionicons name="send" size={18} color={COLORS.white} />
+                                <Ionicons name="send" size={18} color={colors.onAccent} />
                             </TouchableOpacity>
                         </View>
                     </View>
@@ -296,7 +303,7 @@ export default function SupportScreen() {
                         <Ionicons 
                             name="chatbubble-ellipses" 
                             size={24} 
-                            color={COLORS.white} 
+                            color={colors.onAccent} 
                         />
                     </TouchableOpacity>
                 )}
@@ -315,7 +322,7 @@ export default function SupportScreen() {
                                     <Ionicons 
                                         name={modalConfig.type === 'success' ? "checkmark-circle" : "alert-circle"} 
                                         size={55} 
-                                        color={modalConfig.type === 'success' ? COLORS.primary : "#EF4444"} 
+                                        color={modalConfig.type === 'success' ? colors.primaryText : colors.error} 
                                         style={{ marginBottom: SPACING.md }}
                                     />
                                     <Text style={styles.modalTitle}>{modalConfig.title}</Text>
@@ -325,7 +332,7 @@ export default function SupportScreen() {
                                     </View>
 
                                     <TouchableOpacity 
-                                        style={[styles.acceptModalButton, { backgroundColor: modalConfig.type === 'success' ? COLORS.accent : "#EF4444" }]} 
+                                        style={[styles.acceptModalButton, { backgroundColor: modalConfig.type === 'success' ? colors.accent : colors.error }]} 
                                         onPress={() => setModalVisible(false)}
                                     >
                                         <Text style={styles.acceptModalText}>Entendido</Text>
@@ -340,255 +347,259 @@ export default function SupportScreen() {
     );
 }
 
-const styles = StyleSheet.create({
-    container: {
-        padding: SPACING.lg,
-        paddingBottom: 40,
-        backgroundColor: COLORS.background,
-    },
-    sectionTitle: {
-        fontFamily: FONTS.heading,
-        fontSize: 18,
-        color: COLORS.primary,
-        fontWeight: 'bold',
-        marginBottom: SPACING.md,
-    },
-    // Estilos FAQ (Acordeón)
-    faqCard: {
-        backgroundColor: COLORS.white,
-        borderRadius: RADIUS.md,
-        marginBottom: SPACING.sm,
-        borderWidth: 1,
-        borderColor: COLORS.border,
-        overflow: 'hidden',
-    },
-    faqHeader: {
-        flexDirection: 'row',
-        justifyContent: 'space-between',
-        alignItems: 'center',
-        padding: SPACING.md,
-    },
-    faqQuestion: {
-        fontFamily: FONTS.heading,
-        fontSize: 15,
-        color: COLORS.text,
-        fontWeight: '600',
-        flex: 1,
-        marginRight: SPACING.sm,
-    },
-    faqBody: {
-        paddingHorizontal: SPACING.md,
-        paddingBottom: SPACING.md,
-        backgroundColor: '#F9FAFB',
-        borderTopWidth: 1,
-        borderTopColor: '#E5E7EB',
-        paddingTop: SPACING.sm,
-    },
-    faqAnswer: {
-        fontFamily: FONTS.body,
-        fontSize: 14,
-        color: COLORS.textMuted,
-        lineHeight: 20,
-    },
-    // Estilos Botón Flotante del Chat
-    floatingButton: {
-        position: 'absolute',
-        bottom: 20,
-        right: 20,
-        width: 56,
-        height: 56,
-        borderRadius: 28,
-        backgroundColor: COLORS.primary,
-        justifyContent: 'center',
-        alignItems: 'center',
-        elevation: 6,
-        shadowColor: '#000',
-        shadowOffset: { width: 0, height: 3 },
-        shadowOpacity: 0.3,
-        shadowRadius: 4.65,
-        zIndex: 100,
-    },
-    // Estilos Contenedor Chat
-    floatingChatContainer: {
-        position: 'absolute',
-        top: 0,
-        left: 0,
-        right: 0,
-        backgroundColor: COLORS.white,
-        zIndex: 99,
-        elevation: 10,
-    },
-    floatingChatHeader: {
-        flexDirection: 'row',
-        alignItems: 'center',
-        justifyContent: 'space-between',
-        paddingHorizontal: SPACING.lg,
-        paddingVertical: 16,
-        backgroundColor: '#F3F4F6',
-        borderBottomWidth: 1,
-        borderBottomColor: COLORS.border,
-    },
-    chatHeaderTitleContainer: {
-        flexDirection: 'row',
-        alignItems: 'center',
-    },
-    onlineDot: {
-        width: 10,
-        height: 10,
-        borderRadius: 5,
-        backgroundColor: '#10B981',
-        marginRight: 10,
-    },
-    floatingChatHeaderText: {
-        fontFamily: FONTS.heading,
-        fontSize: 16,
-        fontWeight: 'bold',
-        color: COLORS.text,
-    },
-    closeChatButton: {
-        padding: 4,
-    },
-    chatScroll: {
-        flex: 1,
-    },
-    chatBubble: {
-        maxWidth: '80%',
-        padding: SPACING.md,
-        borderRadius: RADIUS.md,
-        marginBottom: SPACING.sm,
-    },
-    userBubble: {
-        backgroundColor: COLORS.accent,
-        alignSelf: 'flex-end',
-    },
-    botBubble: {
-        backgroundColor: '#F3F4F6',
-        alignSelf: 'flex-start',
-    },
-    chatText: {
-        fontFamily: FONTS.body,
-        fontSize: 14,
-    },
-    userText: {
-        color: COLORS.white,
-    },
-    botText: {
-        color: COLORS.text,
-    },
-    chatInputContainer: {
-        flexDirection: 'row',
-        padding: SPACING.md,
-        borderTopWidth: 1,
-        borderTopColor: COLORS.border,
-        backgroundColor: COLORS.white,
-        alignItems: 'center',
-    },
-    chatInput: {
-        flex: 1,
-        backgroundColor: '#F3F4F6',
-        borderRadius: RADIUS.pill,
-        paddingHorizontal: SPACING.md,
-        height: 45,
-        fontSize: 14,
-        color: COLORS.text,
-    },
-    sendButton: {
-        backgroundColor: COLORS.primary,
-        justifyContent: 'center',
-        alignItems: 'center',
-        width: 42,
-        height: 42,
-        borderRadius: 21,
-        marginLeft: SPACING.sm,
-    },
-    // Estilos Formulario de Contacto
-    contactCard: {
-        backgroundColor: COLORS.white,
-        borderRadius: RADIUS.lg,
-        padding: SPACING.lg,
-        borderWidth: 1,
-        borderColor: COLORS.border,
-        ...SHADOWS.card,
-    },
-    contactSubtitle: {
-        fontFamily: FONTS.body,
-        fontSize: 14,
-        color: COLORS.textMuted,
-        marginBottom: SPACING.md,
-    },
-    textArea: {
-        backgroundColor: '#F3F4F6',
-        borderRadius: RADIUS.md,
-        padding: SPACING.md,
-        height: 100,
-        fontFamily: FONTS.body,
-        fontSize: 14,
-        color: COLORS.text,
-        marginBottom: SPACING.md,
-        borderWidth: 1,
-        borderColor: COLORS.border,
-    },
-    submitButton: {
-        backgroundColor: COLORS.accent,
-        paddingVertical: 14,
-        borderRadius: RADIUS.md,
-        alignItems: 'center',
-    },
-    submitText: {
-        color: COLORS.white,
-        fontFamily: FONTS.heading,
-        fontSize: 15,
-        fontWeight: 'bold',
-    },
-    // Estilos del Modal
-    overlay: {
-        flex: 1,
-        backgroundColor: 'rgba(33, 37, 41, 0.8)',
-        justifyContent: 'center',
-        alignItems: 'center',
-        padding: SPACING.lg,
-    },
-    modalContainer: {
-        backgroundColor: COLORS.white,
-        width: '100%',
-        borderRadius: RADIUS.lg,
-        padding: SPACING.xl,
-        alignItems: 'center',
-    },
-    modalTitle: {
-        fontFamily: FONTS.heading,
-        fontSize: 22,
-        color: COLORS.text,
-        fontWeight: 'bold',
-        marginBottom: SPACING.md,
-        textAlign: 'center',
-    },
-    contentBox: {
-        backgroundColor: '#F9FAFB',
-        borderWidth: 1,
-        borderColor: '#E5E7EB',
-        borderRadius: RADIUS.md,
-        padding: SPACING.lg,
-        marginBottom: SPACING.xl,
-        width: '100%',
-    },
-    modalMessage: {
-        fontFamily: FONTS.body,
-        fontSize: 15,
-        color: COLORS.text,
-        textAlign: 'center',
-        lineHeight: 22,
-    },
-    acceptModalButton: {
-        width: '100%',
-        paddingVertical: 12,
-        borderRadius: RADIUS.md,
-        alignItems: 'center',
-    },
-    acceptModalText: {
-        color: COLORS.white,
-        fontFamily: FONTS.heading,
-        fontSize: 16,
-        fontWeight: 'bold',
-    }
-});
+const createStyles = ({ colors }) =>
+    StyleSheet.create({
+        container: {
+            padding: SPACING.lg,
+            paddingBottom: 40,
+            backgroundColor: colors.background,
+        },
+        sectionTitle: {
+            fontFamily: FONTS.heading,
+            fontSize: 18,
+            color: colors.primaryText,
+            fontWeight: 'bold',
+            marginBottom: SPACING.md,
+        },
+        // Estilos FAQ (Acordeón)
+        faqCard: {
+            backgroundColor: colors.surface,
+            borderRadius: RADIUS.md,
+            marginBottom: SPACING.sm,
+            borderWidth: 1,
+            borderColor: colors.border,
+            overflow: 'hidden',
+        },
+        faqHeader: {
+            flexDirection: 'row',
+            justifyContent: 'space-between',
+            alignItems: 'center',
+            padding: SPACING.md,
+        },
+        faqQuestion: {
+            fontFamily: FONTS.heading,
+            fontSize: 15,
+            color: colors.text,
+            fontWeight: '600',
+            flex: 1,
+            marginRight: SPACING.sm,
+        },
+        faqBody: {
+            paddingHorizontal: SPACING.md,
+            paddingBottom: SPACING.md,
+            backgroundColor: colors.surfaceAlt,
+            borderTopWidth: 1,
+            borderTopColor: colors.border,
+            paddingTop: SPACING.sm,
+        },
+        faqAnswer: {
+            fontFamily: FONTS.body,
+            fontSize: 14,
+            color: colors.textMuted,
+            lineHeight: 20,
+        },
+        // Estilos Botón Flotante del Chat
+        floatingButton: {
+            position: 'absolute',
+            bottom: 20,
+            right: 20,
+            width: 56,
+            height: 56,
+            borderRadius: 28,
+            backgroundColor: colors.primary,
+            justifyContent: 'center',
+            alignItems: 'center',
+            elevation: 6,
+            shadowColor: '#000',
+            shadowOffset: { width: 0, height: 3 },
+            shadowOpacity: 0.3,
+            shadowRadius: 4.65,
+            zIndex: 100,
+        },
+        // Estilos Contenedor Chat
+        floatingChatContainer: {
+            position: 'absolute',
+            top: 0,
+            left: 0,
+            right: 0,
+            backgroundColor: colors.surface,
+            zIndex: 99,
+            elevation: 10,
+        },
+        floatingChatHeader: {
+            flexDirection: 'row',
+            alignItems: 'center',
+            justifyContent: 'space-between',
+            paddingHorizontal: SPACING.lg,
+            paddingVertical: 16,
+            backgroundColor: colors.surfaceAlt,
+            borderBottomWidth: 1,
+            borderBottomColor: colors.border,
+        },
+        chatHeaderTitleContainer: {
+            flexDirection: 'row',
+            alignItems: 'center',
+        },
+        onlineDot: {
+            width: 10,
+            height: 10,
+            borderRadius: 5,
+            backgroundColor: '#10B981',
+            marginRight: 10,
+        },
+        floatingChatHeaderText: {
+            fontFamily: FONTS.heading,
+            fontSize: 16,
+            fontWeight: 'bold',
+            color: colors.text,
+        },
+        closeChatButton: {
+            padding: 4,
+        },
+        chatScroll: {
+            flex: 1,
+            backgroundColor: colors.surface,
+        },
+        chatBubble: {
+            maxWidth: '80%',
+            padding: SPACING.md,
+            borderRadius: RADIUS.md,
+            marginBottom: SPACING.sm,
+        },
+        userBubble: {
+            backgroundColor: colors.accent,
+            alignSelf: 'flex-end',
+        },
+        botBubble: {
+            backgroundColor: colors.surfaceAlt,
+            alignSelf: 'flex-start',
+        },
+        chatText: {
+            fontFamily: FONTS.body,
+            fontSize: 14,
+        },
+        userText: {
+            color: colors.onAccent,
+        },
+        botText: {
+            color: colors.text,
+        },
+        chatInputContainer: {
+            flexDirection: 'row',
+            padding: SPACING.md,
+            borderTopWidth: 1,
+            borderTopColor: colors.border,
+            backgroundColor: colors.surface,
+            alignItems: 'center',
+        },
+        chatInput: {
+            flex: 1,
+            backgroundColor: colors.surfaceAlt,
+            borderRadius: RADIUS.pill,
+            paddingHorizontal: SPACING.md,
+            height: 45,
+            fontSize: 14,
+            color: colors.text,
+        },
+        sendButton: {
+            backgroundColor: colors.accent,
+            justifyContent: 'center',
+            alignItems: 'center',
+            width: 42,
+            height: 42,
+            borderRadius: 21,
+            marginLeft: SPACING.sm,
+        },
+        // Estilos Formulario de Contacto
+        contactCard: {
+            backgroundColor: colors.surface,
+            borderRadius: RADIUS.lg,
+            padding: SPACING.lg,
+            borderWidth: 1,
+            borderColor: colors.border,
+            ...SHADOWS.card,
+        },
+        contactSubtitle: {
+            fontFamily: FONTS.body,
+            fontSize: 14,
+            color: colors.textMuted,
+            marginBottom: SPACING.md,
+        },
+        textArea: {
+            backgroundColor: colors.surfaceAlt,
+            borderRadius: RADIUS.md,
+            padding: SPACING.md,
+            height: 100,
+            fontFamily: FONTS.body,
+            fontSize: 14,
+            color: colors.text,
+            marginBottom: SPACING.md,
+            borderWidth: 1,
+            borderColor: colors.border,
+        },
+        submitButton: {
+            backgroundColor: colors.accent,
+            paddingVertical: 14,
+            borderRadius: RADIUS.md,
+            alignItems: 'center',
+        },
+        submitText: {
+            color: colors.onAccent,
+            fontFamily: FONTS.heading,
+            fontSize: 15,
+            fontWeight: 'bold',
+        },
+        // Estilos del Modal
+        overlay: {
+            flex: 1,
+            backgroundColor: colors.overlay,
+            justifyContent: 'center',
+            alignItems: 'center',
+            padding: SPACING.lg,
+        },
+        modalContainer: {
+            backgroundColor: colors.surface,
+            width: '100%',
+            borderRadius: RADIUS.lg,
+            padding: SPACING.xl,
+            alignItems: 'center',
+            borderWidth: 1,
+            borderColor: colors.border,
+        },
+        modalTitle: {
+            fontFamily: FONTS.heading,
+            fontSize: 22,
+            color: colors.text,
+            fontWeight: 'bold',
+            marginBottom: SPACING.md,
+            textAlign: 'center',
+        },
+        contentBox: {
+            backgroundColor: colors.surfaceAlt,
+            borderWidth: 1,
+            borderColor: colors.border,
+            borderRadius: RADIUS.md,
+            padding: SPACING.lg,
+            marginBottom: SPACING.xl,
+            width: '100%',
+        },
+        modalMessage: {
+            fontFamily: FONTS.body,
+            fontSize: 15,
+            color: colors.text,
+            textAlign: 'center',
+            lineHeight: 22,
+        },
+        acceptModalButton: {
+            width: '100%',
+            paddingVertical: 12,
+            borderRadius: RADIUS.md,
+            alignItems: 'center',
+        },
+        acceptModalText: {
+            color: colors.onAccent,
+            fontFamily: FONTS.heading,
+            fontSize: 16,
+            fontWeight: 'bold',
+        }
+    });

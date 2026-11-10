@@ -1,12 +1,25 @@
 import { useState, useEffect } from "react";
-import { View, Text, StyleSheet, FlatList, TextInput, TouchableOpacity, Image, ActivityIndicator, ScrollView, Alert,} from "react-native";
+import {
+  View,
+  Text,
+  StyleSheet,
+  FlatList,
+  TextInput,
+  TouchableOpacity,
+  Image,
+  ActivityIndicator,
+  ScrollView,
+  Alert,
+} from "react-native";
 import useApi from "../hooks/useApi";
 import { Ionicons } from "@expo/vector-icons";
 import { destinationService } from "../api/services/destinationService";
 import MainLayout from "../components/MainLayout";
 import * as Location from "expo-location";
 import AsyncStorage from "@react-native-async-storage/async-storage";
-import { COLORS, FONTS, SIZES, SPACING, RADIUS, SHADOWS,} from "../constants/theme";
+import { FONTS, SIZES, SPACING, RADIUS, SHADOWS } from "../constants/theme";
+import { useTheme } from "../context/ThemeContext";
+import { useThemedStyles } from "../hooks/useThemedStyles";
 
 const CATEGORIES = [
   { id: "todos", label: "Todos" },
@@ -20,8 +33,11 @@ const CATEGORIES = [
 
 const BASE_URL =
   process.env.EXPO_PUBLIC_API_URL ?? "http://192.168.0.14:8000/api";
+  const SERVER_ROOT = BASE_URL.replace("/api", "");
 
 export default function ExplorerDestinationsScreen({ navigation }) {
+  const { colors, isDark } = useTheme(); // para íconos y colores en línea
+  const styles = useThemedStyles(createStyles); // para los estilos
   const [selectedCategory, setSelectedCategory] = useState("todos");
   const [searchQuery, setSearchQuery] = useState("");
   const [isNearbyActive, setIsNearbyActive] = useState(false);
@@ -123,6 +139,8 @@ export default function ExplorerDestinationsScreen({ navigation }) {
     );
   };
 
+
+
   const baseList = isNearbyActive ? nearbyData : (data?.data ?? data ?? []);
 
   const filteredDestinations = baseList.filter((item) => {
@@ -133,6 +151,24 @@ export default function ExplorerDestinationsScreen({ navigation }) {
       selectedCategory === "todos" || item.category === selectedCategory;
     return matchesSearch && matchesCategory;
   });
+
+  const resolveImageUri = (item) => {
+    const rawImage = item.image_url || item.image || item.imagen || item.photo || item.foto;
+    
+    if (!rawImage) {
+      return "https://images.unsplash.com/photo-1507525428034-b723cf961d3e"; // Imagen por defecto
+    }
+    // Si ya viene con http completo
+    if (rawImage.startsWith("http://") || rawImage.startsWith("https://")) {
+      return rawImage;
+    }
+    // Si empieza con barra diagonal
+    if (rawImage.startsWith("/")) {
+      return `${SERVER_ROOT}${rawImage}`;
+    }
+    // Si es una ruta relativa pura guardada en base de datos
+    return `${SERVER_ROOT}/storage/${rawImage}`;
+  };
 
   const renderDestinationItem = ({ item }) => (
     <TouchableOpacity
@@ -146,7 +182,7 @@ export default function ExplorerDestinationsScreen({ navigation }) {
         <Text style={styles.cardTitle}>{item.name}</Text>
         {item.distance !== undefined && item.distance !== null && (
           <View style={styles.distanceBadge}>
-            <Ionicons name="navigate" size={10} color={COLORS.secondary} />
+            <Ionicons name="navigate" size={10} color={colors.secondary} />
             <Text style={styles.distanceText}>
               {parseFloat(item.distance).toFixed(1)} km
             </Text>
@@ -156,11 +192,7 @@ export default function ExplorerDestinationsScreen({ navigation }) {
 
       <View style={styles.cardBodyContainer}>
         <Image
-          source={{
-            uri:
-              item.image_url ||
-              "https://images.unsplash.com/photo-1507525428034-b723cf961d3e",
-          }}
+          source={{ uri: resolveImageUri(item) }}
           style={styles.cardImage}
         />
         <View style={styles.cardInfo}>
@@ -170,13 +202,18 @@ export default function ExplorerDestinationsScreen({ navigation }) {
                 <Ionicons
                   name="compass-outline"
                   size={12}
-                  color={COLORS.secondary}
+                  color={colors.secondary}
                 />
                 <Text style={styles.miniBadgeText}>{item.category}</Text>
               </View>
             )}
             {item.traveler_type && (
-              <View style={[styles.miniBadge, { backgroundColor: "#EFF6FF" }]}>
+              <View
+                style={[
+                  styles.miniBadge,
+                  { backgroundColor: isDark ? colors.surfaceAlt : "#EFF6FF" },
+                ]}
+              >
                 <Ionicons name="people-outline" size={12} color="#3B82F6" />
                 <Text style={[styles.miniBadgeText, { color: "#3B82F6" }]}>
                   {item.traveler_type}
@@ -211,7 +248,7 @@ export default function ExplorerDestinationsScreen({ navigation }) {
           <Ionicons
             name="search"
             size={20}
-            color={COLORS.textMuted}
+            color={colors.textMuted}
             style={styles.searchIcon}
           />
           <TextInput
@@ -232,7 +269,7 @@ export default function ExplorerDestinationsScreen({ navigation }) {
             <Ionicons
               name={isNearbyActive ? "location" : "location-outline"}
               size={20}
-              color={isNearbyActive ? COLORS.white : COLORS.secondary}
+              color={isNearbyActive ? colors.onAccent : colors.secondary}
             />
           </TouchableOpacity>
         </View>
@@ -273,7 +310,7 @@ export default function ExplorerDestinationsScreen({ navigation }) {
         {isNearbyActive && (
           <View style={styles.activeNearbyBanner}>
             <Text style={styles.activeNearbyText}>
-              ✨ Mostrando lugares ordenados por cercanía a tu ubicación
+              Mostrando lugares ordenados por cercanía a tu ubicación
             </Text>
             <TouchableOpacity onPress={() => setIsNearbyActive(false)}>
               <Text style={styles.clearNearbyText}>Ver todos</Text>
@@ -283,7 +320,7 @@ export default function ExplorerDestinationsScreen({ navigation }) {
 
         {isLoadingScreen ? (
           <View style={styles.centerContainer}>
-            <ActivityIndicator size="large" color={COLORS.accent} />
+            <ActivityIndicator size="large" color={colors.accent} />
           </View>
         ) : error ? (
           <View style={styles.centerContainer}>
@@ -312,205 +349,210 @@ export default function ExplorerDestinationsScreen({ navigation }) {
   );
 }
 
-const styles = StyleSheet.create({
-  container: {
-    flex: 1,
-    paddingHorizontal: SPACING.md,
-    paddingTop: SPACING.sm,
-  },
-  searchContainer: {
-    flexDirection: "row",
-    alignItems: "center",
-    backgroundColor: COLORS.background,
-    borderWidth: 1,
-    borderColor: COLORS.border,
-    borderRadius: RADIUS.pill,
-    paddingHorizontal: SPACING.md,
-    height: 46,
-    marginBottom: SPACING.sm,
-  },
-  searchIcon: {
-    marginRight: SPACING.sm,
-  },
-  searchInput: {
-    flex: 1,
-    fontFamily: FONTS.body,
-    fontSize: SIZES.body,
-    color: COLORS.text,
-  },
-  locationButton: {
-    padding: 6,
-    borderRadius: RADIUS.pill,
-    backgroundColor: "#E2F9F1",
-    marginLeft: SPACING.xs,
-    justifyContent: "center",
-    alignItems: "center",
-  },
-  locationButtonActive: {
-    backgroundColor: COLORS.secondary,
-  },
-  categoriesWrapper: {
-    height: 50,
-    marginBottom: SPACING.xs,
-  },
-  categoriesContainer: {
-    alignItems: "center",
-    paddingRight: SPACING.md,
-  },
-  pill: {
-    paddingVertical: SPACING.xs,
-    paddingHorizontal: SPACING.md,
-    borderRadius: RADIUS.pill,
-    marginRight: SPACING.sm,
-    elevation: 1,
-    height: 38,
-    justifyContent: "center",
-  },
-  pillSelected: {
-    backgroundColor: COLORS.secondary,
-  },
-  pillUnselected: {
-    backgroundColor: COLORS.border,
-  },
-  pillText: {
-    fontFamily: FONTS.body,
-    fontSize: SIZES.body,
-    fontWeight: "600",
-  },
-  pillTextSelected: {
-    color: COLORS.white,
-  },
-  pillTextUnselected: {
-    color: COLORS.textMuted,
-  },
-  activeNearbyBanner: {
-    flexDirection: "row",
-    justifyContent: "space-between",
-    alignItems: "center",
-    backgroundColor: "#E2F9F1",
-    paddingHorizontal: SPACING.sm,
-    paddingVertical: SPACING.xs,
-    borderRadius: RADIUS.sm,
-    marginBottom: SPACING.sm,
-  },
-  activeNearbyText: {
-    fontFamily: FONTS.body,
-    fontSize: SIZES.small,
-    color: "#1F4E47",
-    flex: 1,
-  },
-  clearNearbyText: {
-    fontFamily: FONTS.heading,
-    fontSize: SIZES.small,
-    color: COLORS.secondary,
-    marginLeft: SPACING.sm,
-  },
-  listContainer: {
-    paddingBottom: SPACING.xl,
-  },
-  card: {
-    backgroundColor: COLORS.white,
-    borderRadius: RADIUS.md,
-    padding: SPACING.md,
-    marginBottom: SPACING.md,
-    borderWidth: 1,
-    borderColor: COLORS.border,
-    ...SHADOWS.card,
-  },
-  cardHeaderRow: {
-    flexDirection: "row",
-    justifyContent: "space-between",
-    alignItems: "center",
-    marginBottom: SPACING.sm,
-  },
-  cardTitle: {
-    fontFamily: FONTS.heading,
-    fontSize: SIZES.h3,
-    color: COLORS.primary,
-    flex: 1,
-    marginRight: SPACING.xs,
-  },
-  distanceBadge: {
-    flexDirection: "row",
-    alignItems: "center",
-    backgroundColor: "#E2F9F1",
-    paddingHorizontal: 6,
-    paddingVertical: 2,
-    borderRadius: RADIUS.sm,
-  },
-  distanceText: {
-    fontFamily: FONTS.heading,
-    fontSize: SIZES.small,
-    color: COLORS.secondary,
-    marginLeft: 2,
-  },
-  cardBodyContainer: {
-    flexDirection: "row",
-  },
-  cardImage: {
-    width: 100,
-    height: 95,
-    borderRadius: RADIUS.sm,
-    backgroundColor: COLORS.background,
-  },
-  cardInfo: {
-    flex: 1,
-    marginLeft: SPACING.sm,
-    justifyContent: "space-between",
-  },
-  cardDescription: {
-    fontFamily: FONTS.body,
-    fontSize: SIZES.small,
-    color: COLORS.textMuted,
-    marginVertical: 4,
-  },
-  reviewButton: {
-    backgroundColor: COLORS.secondary,
-    paddingVertical: 5,
-    paddingHorizontal: 12,
-    borderRadius: RADIUS.pill,
-    alignSelf: "flex-end",
-  },
-  reviewButtonText: {
-    fontFamily: FONTS.heading,
-    color: COLORS.white,
-    fontSize: SIZES.small,
-  },
-  centerContainer: {
-    flex: 1,
-    justifyContent: "center",
-    alignItems: "center",
-    paddingVertical: SPACING.xl,
-  },
-  errorText: {
-    fontFamily: FONTS.body,
-    color: COLORS.btnCancelar,
-    textAlign: "center",
-  },
-  emptyText: {
-    fontFamily: FONTS.body,
-    color: COLORS.textMuted,
-    textAlign: "center",
-  },
-  badgeRow: {
-    flexDirection: "row",
-    flexWrap: "wrap",
-    marginBottom: 2,
-  },
-  miniBadge: {
-    flexDirection: "row",
-    alignItems: "center",
-    backgroundColor: "#E2F9F1",
-    paddingHorizontal: 6,
-    paddingVertical: 2,
-    borderRadius: RADIUS.sm,
-    marginRight: SPACING.xs,
-    marginBottom: 2,
-  },
-  miniBadgeText: {
-    fontFamily: FONTS.heading,
-    fontSize: SIZES.small,
-    color: COLORS.secondary,
-    marginLeft: 3,
-  },
-});
+const createStyles = ({ colors, isDark }) => {
+  // Verdes claros fijos: en oscuro se usan los colores suaves del tema
+  const softGreen = isDark ? colors.secondarySoft : "#E2F9F1";
+
+  return StyleSheet.create({
+    container: {
+      flex: 1,
+      paddingHorizontal: SPACING.md,
+      paddingTop: SPACING.sm,
+    },
+    searchContainer: {
+      flexDirection: "row",
+      alignItems: "center",
+      backgroundColor: colors.surfaceAlt,
+      borderWidth: 1,
+      borderColor: colors.border,
+      borderRadius: RADIUS.pill,
+      paddingHorizontal: SPACING.md,
+      height: 46,
+      marginBottom: SPACING.sm,
+    },
+    searchIcon: {
+      marginRight: SPACING.sm,
+    },
+    searchInput: {
+      flex: 1,
+      fontFamily: FONTS.body,
+      fontSize: SIZES.body,
+      color: colors.text,
+    },
+    locationButton: {
+      padding: 6,
+      borderRadius: RADIUS.pill,
+      backgroundColor: softGreen,
+      marginLeft: SPACING.xs,
+      justifyContent: "center",
+      alignItems: "center",
+    },
+    locationButtonActive: {
+      backgroundColor: colors.secondary,
+    },
+    categoriesWrapper: {
+      height: 50,
+      marginBottom: SPACING.xs,
+    },
+    categoriesContainer: {
+      alignItems: "center",
+      paddingRight: SPACING.md,
+    },
+    pill: {
+      paddingVertical: SPACING.xs,
+      paddingHorizontal: SPACING.md,
+      borderRadius: RADIUS.pill,
+      marginRight: SPACING.sm,
+      elevation: 1,
+      height: 38,
+      justifyContent: "center",
+    },
+    pillSelected: {
+      backgroundColor: colors.secondary,
+    },
+    pillUnselected: {
+      backgroundColor: colors.border,
+    },
+    pillText: {
+      fontFamily: FONTS.body,
+      fontSize: SIZES.body,
+      fontWeight: "600",
+    },
+    pillTextSelected: {
+      color: colors.onAccent,
+    },
+    pillTextUnselected: {
+      color: colors.textMuted,
+    },
+    activeNearbyBanner: {
+      flexDirection: "row",
+      justifyContent: "space-between",
+      alignItems: "center",
+      backgroundColor: softGreen,
+      paddingHorizontal: SPACING.sm,
+      paddingVertical: SPACING.xs,
+      borderRadius: RADIUS.sm,
+      marginBottom: SPACING.sm,
+    },
+    activeNearbyText: {
+      fontFamily: FONTS.body,
+      fontSize: SIZES.small,
+      color: isDark ? colors.text : "#1F4E47",
+      flex: 1,
+    },
+    clearNearbyText: {
+      fontFamily: FONTS.heading,
+      fontSize: SIZES.small,
+      color: colors.secondary,
+      marginLeft: SPACING.sm,
+    },
+    listContainer: {
+      paddingBottom: SPACING.xl,
+    },
+    card: {
+      backgroundColor: colors.surface,
+      borderRadius: RADIUS.md,
+      padding: SPACING.md,
+      marginBottom: SPACING.md,
+      borderWidth: 1,
+      borderColor: colors.border,
+      ...SHADOWS.card,
+    },
+    cardHeaderRow: {
+      flexDirection: "row",
+      justifyContent: "space-between",
+      alignItems: "center",
+      marginBottom: SPACING.sm,
+    },
+    cardTitle: {
+      fontFamily: FONTS.heading,
+      fontSize: SIZES.h3,
+      color: colors.primaryText,
+      flex: 1,
+      marginRight: SPACING.xs,
+    },
+    distanceBadge: {
+      flexDirection: "row",
+      alignItems: "center",
+      backgroundColor: softGreen,
+      paddingHorizontal: 6,
+      paddingVertical: 2,
+      borderRadius: RADIUS.sm,
+    },
+    distanceText: {
+      fontFamily: FONTS.heading,
+      fontSize: SIZES.small,
+      color: colors.secondary,
+      marginLeft: 2,
+    },
+    cardBodyContainer: {
+      flexDirection: "row",
+    },
+    cardImage: {
+      width: 100,
+      height: 95,
+      borderRadius: RADIUS.sm,
+      backgroundColor: colors.surfaceAlt,
+    },
+    cardInfo: {
+      flex: 1,
+      marginLeft: SPACING.sm,
+      justifyContent: "space-between",
+    },
+    cardDescription: {
+      fontFamily: FONTS.body,
+      fontSize: SIZES.small,
+      color: colors.textMuted,
+      marginVertical: 4,
+    },
+    reviewButton: {
+      backgroundColor: colors.secondary,
+      paddingVertical: 5,
+      paddingHorizontal: 12,
+      borderRadius: RADIUS.pill,
+      alignSelf: "flex-end",
+    },
+    reviewButtonText: {
+      fontFamily: FONTS.heading,
+      color: colors.onAccent,
+      fontSize: SIZES.small,
+    },
+    centerContainer: {
+      flex: 1,
+      justifyContent: "center",
+      alignItems: "center",
+      paddingVertical: SPACING.xl,
+    },
+    errorText: {
+      fontFamily: FONTS.body,
+      color: colors.btnCancelar,
+      textAlign: "center",
+    },
+    emptyText: {
+      fontFamily: FONTS.body,
+      color: colors.textMuted,
+      textAlign: "center",
+    },
+    badgeRow: {
+      flexDirection: "row",
+      flexWrap: "wrap",
+      marginBottom: 2,
+    },
+    miniBadge: {
+      flexDirection: "row",
+      alignItems: "center",
+      backgroundColor: softGreen,
+      paddingHorizontal: 6,
+      paddingVertical: 2,
+      borderRadius: RADIUS.sm,
+      marginRight: SPACING.xs,
+      marginBottom: 2,
+    },
+    miniBadgeText: {
+      fontFamily: FONTS.heading,
+      fontSize: SIZES.small,
+      color: colors.secondary,
+      marginLeft: 3,
+    },
+  });
+};

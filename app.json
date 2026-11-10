@@ -24,7 +24,13 @@
       "expo-secure-store",
       "expo-font",
       "expo-status-bar",
-      "expo-asset"
+      "expo-asset",
+      [
+        "expo-location",
+        {
+          "locationAlwaysAndWhenInUsePermission": "Permitir que Rincón Guanaco acceda a tu ubicación para mostrarte alojamientos y destinos cercanos."
+        }
+      ]
     ]
   }
 }

@@ -1,15 +1,13 @@
-import StackNavigation from "./src/routes/StackNavigation";
 import { UserProvider } from "./src/context/UserContext";
-import { useFonts } from "expo-font";
-import { Poppins_600SemiBold } from "@expo-google-fonts/poppins";
-import { Inter_400Regular } from "@expo-google-fonts/inter";
+import { ThemeProvider } from "./src/context/ThemeContext";
+import StackNavigation from "./src/routes/StackNavigation";
 
 export default function App() {
-  const [fontsLoaded] = useFonts({ Poppins_600SemiBold, Inter_400Regular });
-
   return (
     <UserProvider>
-      <StackNavigation />
+      <ThemeProvider>
+        <StackNavigation />
+      </ThemeProvider>
     </UserProvider>
   );
 }

@@ -1,16 +1,17 @@
 import React, { useState, useRef, useEffect } from 'react';
-import { 
-    View, 
-    Text, 
-    StyleSheet, 
-    ScrollView, 
-    TextInput, 
-    TouchableOpacity, 
-    Keyboard, 
+import {
+    View,
+    Text,
+    StyleSheet,
+    ScrollView,
+    TextInput,
+    TouchableOpacity,
+    Keyboard,
     TouchableWithoutFeedback,
     ActivityIndicator,
     Modal,
-    Platform
+    Platform,
+    KeyboardAvoidingView
 } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
 import MainLayout from '../components/MainLayout';
@@ -23,18 +24,18 @@ export default function SupportScreen() {
     const { colors, isDark } = useTheme();
     const styles = useThemedStyles(createStyles);
 
-    // --- ESTADOS DEL MODAL PERSONALIZADO ---
+    // ESTADOS DEL MODAL PERSONALIZADO 
     const [modalVisible, setModalVisible] = useState(false);
     const [modalConfig, setModalConfig] = useState({ title: '', message: '', type: 'success' });
 
-    // --- ESTADO PARA CONTROLAR LA VISIBILIDAD DEL CHAT ---
+    // ESTADO PARA CONTROLAR LA VISIBILIDAD DEL CHAT 
     const [chatOpen, setChatOpen] = useState(false);
     const [keyboardHeight, setKeyboardHeight] = useState(0);
 
-    // --- REFERENCIA PARA HACER SCROLL AUTOMÁTICO EN EL CHAT ---
+    // REFERENCIA PARA HACER SCROLL AUTOMÁTICO EN EL CHAT 
     const chatScrollViewRef = useRef(null);
 
-    // --- ESCUCHAS NATIVAS DEL TECLADO ---
+    // ESCUCHAS NATIVAS DEL TECLADO 
     useEffect(() => {
         const showSubscription = Keyboard.addListener(
             Platform.OS === 'ios' ? 'keyboardWillShow' : 'keyboardDidShow',
@@ -58,23 +59,23 @@ export default function SupportScreen() {
         };
     }, []);
 
-    // --- ESTADO 1: ACORDEÓN DE FAQ ---
+    // ACORDEÓN DE FAQ 
     const [expandedFaq, setExpandedFaq] = useState(null);
     const faqs = [
-        { 
-            id: 1, 
-            question: '¿Cómo puedo reservar un alojamiento o actividad?', 
-            answer: 'Explora un destino, selecciona la actividad o alojamiento deseado, elige fecha y número de personas, y toca "Agregar" para acumularlo en tus selecciones antes de confirmar tu itinerario.' 
+        {
+            id: 1,
+            question: '¿Cómo puedo reservar un alojamiento o actividad?',
+            answer: 'Explora un destino, selecciona la actividad o alojamiento deseado, elige fecha y número de personas, y toca "Agregar" para acumularlo en tus selecciones antes de confirmar tu itinerario.'
         },
-        { 
-            id: 2, 
-            question: '¿Cómo publico o busco reseñas?', 
-            answer: 'Puedes ir a la pestaña de Reseñas desde la barra inferior o el menú lateral. Ahí podrás buscar por nombre de destino/autor y utilizar el botón flotante (+) para crear una reseña de los lugares que has visitado.' 
+        {
+            id: 2,
+            question: '¿Cómo publico o busco reseñas?',
+            answer: 'Puedes ir a la pestaña de Reseñas desde la barra inferior o el menú lateral. Ahí podrás buscar por nombre de destino/autor y utilizar el botón flotante (+) para crear una reseña de los lugares que has visitado.'
         },
-        { 
-            id: 3, 
-            question: '¿Qué hago si tengo problemas con mi cuenta?', 
-            answer: 'Puedes comunicarte directamente con los administradores de la aplicación utilizando el formulario de comentarios al final de esta pantalla.' 
+        {
+            id: 3,
+            question: '¿Qué hago si tengo problemas con mi cuenta?',
+            answer: 'Puedes comunicarte directamente con los administradores de la aplicación utilizando el formulario de comentarios al final de esta pantalla.'
         },
     ];
 
@@ -82,7 +83,7 @@ export default function SupportScreen() {
         setExpandedFaq(expandedFaq === id ? null : id);
     };
 
-    // --- ESTADO 2: CHAT SIMULADO ---
+    // CHAT SIMULADO 
     const [chatMessages, setChatMessages] = useState([
         { id: 1, sender: 'bot', text: '¡Hola! Soy el asistente virtual de Rincón Guanaco. ¿En qué puedo ayudarte hoy?' }
     ]);
@@ -93,7 +94,7 @@ export default function SupportScreen() {
 
         const userText = inputMessage;
         const newMsgUser = { id: Date.now(), sender: 'user', text: userText };
-        
+
         setChatMessages(prev => [...prev, newMsgUser]);
         setInputMessage('');
 
@@ -128,9 +129,10 @@ export default function SupportScreen() {
         }, 800);
     };
 
-    // --- ESTADO 3: FORMULARIO DE COMENTARIOS / CORREO ---
+    // FORMULARIO DE COMENTARIOS / CORREO
     const [supportComment, setSupportComment] = useState('');
     const [sending, setSending] = useState(false);
+    const mainScrollViewRef = useRef(null);
 
     const handleSendSupportEmail = async () => {
         if (!supportComment.trim()) {
@@ -166,77 +168,90 @@ export default function SupportScreen() {
             setSending(false);
         }
     };
-
     return (
         <MainLayout title="Soporte y Ayuda">
             <View style={{ flex: 1, position: 'relative' }}>
-                <ScrollView 
-                    contentContainerStyle={styles.container} 
-                    showsVerticalScrollIndicator={false}
-                    keyboardShouldPersistTaps="handled"
+
+                <KeyboardAvoidingView
+                    style={{ flex: 1 }}
+                    behavior={Platform.OS === 'ios' ? 'padding' : 'height'}
+                    keyboardVerticalOffset={Platform.OS === 'ios' ? 90 : 0}
                 >
-                    
-                    {/* SECCIÓN 1: PREGUNTAS FRECUENTES (Acordeón) */}
-                    <Text style={styles.sectionTitle}>Preguntas Frecuentes</Text>
-                    {faqs.map((faq) => {
-                        const isExpanded = expandedFaq === faq.id;
-                        return (
-                            <View key={faq.id} style={styles.faqCard}>
-                                <TouchableOpacity 
-                                    style={styles.faqHeader} 
-                                    onPress={() => toggleFaq(faq.id)}
-                                    activeOpacity={0.8}
-                                >
-                                    <Text style={styles.faqQuestion}>{faq.question}</Text>
-                                    <Ionicons 
-                                        name={isExpanded ? "chevron-up" : "chevron-down"} 
-                                        size={20} 
-                                        color={colors.primaryText} 
-                                    />
-                                </TouchableOpacity>
-                                {isExpanded && (
-                                    <View style={styles.faqBody}>
-                                        <Text style={styles.faqAnswer}>{faq.answer}</Text>
-                                    </View>
+                    <ScrollView
+                        ref={mainScrollViewRef}
+                        contentContainerStyle={styles.container}
+                        showsVerticalScrollIndicator={false}
+                        keyboardShouldPersistTaps="handled"
+                    >
+                        {/* SECCIÓN 1: PREGUNTAS FRECUENTES */}
+                        <Text style={styles.sectionTitle}>Preguntas Frecuentes</Text>
+                        {faqs.map((faq) => {
+                            const isExpanded = expandedFaq === faq.id;
+                            return (
+                                <View key={faq.id} style={styles.faqCard}>
+                                    <TouchableOpacity
+                                        style={styles.faqHeader}
+                                        onPress={() => toggleFaq(faq.id)}
+                                        activeOpacity={0.8}
+                                    >
+                                        <Text style={styles.faqQuestion}>{faq.question}</Text>
+                                        <Ionicons
+                                            name={isExpanded ? "chevron-up" : "chevron-down"}
+                                            size={20}
+                                            color={colors.primaryText}
+                                        />
+                                    </TouchableOpacity>
+                                    {isExpanded && (
+                                        <View style={styles.faqBody}>
+                                            <Text style={styles.faqAnswer}>{faq.answer}</Text>
+                                        </View>
+                                    )}
+                                </View>
+                            );
+                        })}
+
+                        {/* SECCIÓN 2: ENVIAR COMENTARIO A ADMINISTRADOR */}
+                        <Text style={[styles.sectionTitle, { marginTop: SPACING.xl }]}>Contáctanos</Text>
+                        <View style={styles.contactCard}>
+                            <Text style={styles.contactSubtitle}>
+                                ¿Tienes algún problema o sugerencia? Envía un mensaje directo al equipo de administración.
+                            </Text>
+                            <TextInput
+                                style={styles.textArea}
+                                multiline
+                                numberOfLines={4}
+                                placeholder="Escribe tu comentario aquí..."
+                                placeholderTextColor={colors.textMuted}
+                                value={supportComment}
+                                onChangeText={setSupportComment}
+                                textAlignVertical="top"
+                                onFocus={() => {
+                                    setTimeout(() => {
+                                        mainScrollViewRef.current?.scrollToEnd({ animated: true });
+                                    }, 100);
+                                }}
+                            />
+                            <TouchableOpacity
+                                style={styles.submitButton}
+                                onPress={handleSendSupportEmail}
+                                disabled={sending}
+                            >
+                                {sending ? (
+                                    <ActivityIndicator color={colors.white} />
+                                ) : (
+                                    <Text style={styles.submitText}>Enviar a Administradores</Text>
                                 )}
-                            </View>
-                        );
-                    })}
+                            </TouchableOpacity>
+                        </View>
+                    </ScrollView>
+                </KeyboardAvoidingView>
 
-                    {/* SECCIÓN 2: ENVIAR COMENTARIO A ADMINISTRADOR */}
-                    <Text style={[styles.sectionTitle, { marginTop: SPACING.xl }]}>Contáctanos</Text>
-                    <View style={styles.contactCard}>
-                        <Text style={styles.contactSubtitle}>
-                            ¿Tienes algún problema o sugerencia? Envía un mensaje directo al equipo de administración.
-                        </Text>
-                        <TextInput 
-                            style={styles.textArea}
-                            multiline
-                            numberOfLines={4}
-                            placeholder="Escribe tu comentario aquí..."
-                            placeholderTextColor={colors.textMuted}
-                            value={supportComment}
-                            onChangeText={setSupportComment}
-                            textAlignVertical="top"
-                        />
-                        <TouchableOpacity 
-                            style={styles.submitButton} 
-                            onPress={handleSendSupportEmail}
-                            disabled={sending}
-                        >
-                            {sending ? (
-                                <ActivityIndicator color={colors.white} />
-                            ) : (
-                                <Text style={styles.submitText}>Enviar a Administradores</Text>
-                            )}
-                        </TouchableOpacity>
-                    </View>
-
-                </ScrollView>
-
-                {/* --- CHAT PANTALLA COMPLETA CON AJUSTE DINÁMICO DE TECLADO --- */}
                 {chatOpen && (
-                    <View style={[styles.floatingChatContainer, { bottom: keyboardHeight > 0 ? keyboardHeight : 0 }]}>
+                    <KeyboardAvoidingView
+                        behavior={Platform.OS === 'ios' ? 'padding' : 'height'}
+                        keyboardVerticalOffset={Platform.OS === 'ios' ? 140 : 40} // 👈 Sube estos valores si el input sigue tapado
+                        style={styles.floatingChatContainer}
+                    >
                         {/* Cabecera del chat */}
                         <View style={styles.floatingChatHeader}>
                             <View style={styles.chatHeaderTitleContainer}>
@@ -249,24 +264,24 @@ export default function SupportScreen() {
                         </View>
 
                         {/* Contenido del Chat con Auto-Scroll */}
-                        <ScrollView 
+                        <ScrollView
                             ref={chatScrollViewRef}
-                            style={styles.chatScroll} 
+                            style={styles.chatScroll}
                             contentContainerStyle={{ padding: SPACING.md, paddingBottom: 20 }}
                             nestedScrollEnabled={true}
                             keyboardShouldPersistTaps="handled"
                             onContentSizeChange={() => chatScrollViewRef.current?.scrollToEnd({ animated: true })}
                         >
                             {chatMessages.map((msg) => (
-                                <View 
-                                    key={msg.id} 
+                                <View
+                                    key={msg.id}
                                     style={[
-                                        styles.chatBubble, 
+                                        styles.chatBubble,
                                         msg.sender === 'user' ? styles.userBubble : styles.botBubble
                                     ]}
                                 >
                                     <Text style={[
-                                        styles.chatText, 
+                                        styles.chatText,
                                         msg.sender === 'user' ? styles.userText : styles.botText
                                     ]}>
                                         {msg.text}
@@ -276,8 +291,8 @@ export default function SupportScreen() {
                         </ScrollView>
 
                         {/* Input del Chat */}
-                        <View style={styles.chatInputContainer}>
-                            <TextInput 
+                        <View style={[styles.chatInputContainer, { paddingBottom: Platform.OS === 'ios' ? 25 : 15 }]}>
+                            <TextInput
                                 style={styles.chatInput}
                                 placeholder="Escribe tu consulta..."
                                 placeholderTextColor={colors.textMuted}
@@ -290,24 +305,24 @@ export default function SupportScreen() {
                                 <Ionicons name="send" size={18} color={colors.onAccent} />
                             </TouchableOpacity>
                         </View>
-                    </View>
+                    </KeyboardAvoidingView>
                 )}
 
                 {/* Botón flotante para abrir el chat */}
                 {!chatOpen && (
-                    <TouchableOpacity 
-                        style={styles.floatingButton} 
+
+                    <TouchableOpacity
+                        style={styles.floatingButton}
                         onPress={() => setChatOpen(true)}
                         activeOpacity={0.85}
                     >
-                        <Ionicons 
-                            name="chatbubble-ellipses" 
-                            size={24} 
-                            color={colors.onAccent} 
+                        <Ionicons
+                            name="chatbubble-ellipses"
+                            size={24}
+                            color={colors.onAccent}
                         />
                     </TouchableOpacity>
                 )}
-
                 {/* MODAL PERSONALIZADO DE ALERTA */}
                 <Modal
                     visible={modalVisible}
@@ -317,22 +332,22 @@ export default function SupportScreen() {
                 >
                     <TouchableWithoutFeedback onPress={() => setModalVisible(false)}>
                         <View style={styles.overlay}>
-                            <TouchableWithoutFeedback onPress={() => {}}>
+                            <TouchableWithoutFeedback onPress={() => { }}>
                                 <View style={styles.modalContainer}>
-                                    <Ionicons 
-                                        name={modalConfig.type === 'success' ? "checkmark-circle" : "alert-circle"} 
-                                        size={55} 
-                                        color={modalConfig.type === 'success' ? colors.primaryText : colors.error} 
+                                    <Ionicons
+                                        name={modalConfig.type === 'success' ? "checkmark-circle" : "alert-circle"}
+                                        size={55}
+                                        color={modalConfig.type === 'success' ? colors.primaryText : colors.error}
                                         style={{ marginBottom: SPACING.md }}
                                     />
                                     <Text style={styles.modalTitle}>{modalConfig.title}</Text>
-                                    
+
                                     <View style={styles.contentBox}>
                                         <Text style={styles.modalMessage}>{modalConfig.message}</Text>
                                     </View>
 
-                                    <TouchableOpacity 
-                                        style={[styles.acceptModalButton, { backgroundColor: modalConfig.type === 'success' ? colors.accent : colors.error }]} 
+                                    <TouchableOpacity
+                                        style={[styles.acceptModalButton, { backgroundColor: modalConfig.type === 'success' ? colors.accent : colors.error }]}
                                         onPress={() => setModalVisible(false)}
                                     >
                                         <Text style={styles.acceptModalText}>Entendido</Text>
@@ -351,7 +366,7 @@ const createStyles = ({ colors }) =>
     StyleSheet.create({
         container: {
             padding: SPACING.lg,
-            paddingBottom: 40,
+            paddingBottom: 100,
             backgroundColor: colors.background,
         },
         sectionTitle: {
@@ -422,6 +437,7 @@ const createStyles = ({ colors }) =>
             top: 0,
             left: 0,
             right: 0,
+            bottom: 0, 
             backgroundColor: colors.surface,
             zIndex: 99,
             elevation: 10,

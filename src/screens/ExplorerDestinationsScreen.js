@@ -170,14 +170,18 @@ export default function ExplorerDestinationsScreen({ navigation }) {
     return `${SERVER_ROOT}/storage/${rawImage}`;
   };
 
-  const renderDestinationItem = ({ item }) => (
-    <TouchableOpacity
-      style={styles.card}
-      onPress={() =>
-        navigation.navigate("DestinationDetail", { destination: item })
-      }
-      activeOpacity={0.9}
-    >
+  const renderDestinationItem = ({ item }) => {
+    const resolvedImage = resolveImageUri(item);
+    return (
+      <TouchableOpacity
+        style={styles.card}
+        onPress={() =>
+          navigation.navigate("DestinationDetail", {
+            destination: { ...item, image_url: resolvedImage }, // 👈 Enviamos la URL ya resuelta
+          })
+        }
+        activeOpacity={0.9}
+      >
       <View style={styles.cardHeaderRow}>
         <Text style={styles.cardTitle}>{item.name}</Text>
         {item.distance !== undefined && item.distance !== null && (
@@ -237,7 +241,9 @@ export default function ExplorerDestinationsScreen({ navigation }) {
         </View>
       </View>
     </TouchableOpacity>
+    
   );
+}
 
   const isLoadingScreen = loading || loadingNearby;
 

@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useState, useRef, useEffect } from "react";
 import {
   View,
   Text,
@@ -8,7 +8,7 @@ import {
   StyleSheet,
   StatusBar,
   ScrollView,
-  KeyboardAvoidingView,
+  Keyboard,
   Platform,
   ActivityIndicator,
 } from "react-native";
@@ -39,12 +39,6 @@ const FIELD_MAP = {
   country_of_origin: "pais",
 };
 
-const pad = (n) => String(n).padStart(2, "0");
-const toDisplay = (d) =>
-  `${pad(d.getDate())}/${pad(d.getMonth() + 1)}/${d.getFullYear()}`;
-const toISODate = (d) =>
-  `${d.getFullYear()}-${pad(d.getMonth() + 1)}-${pad(d.getDate())}`;
-
 const RegisterScreen = () => {
   const insets = useSafeAreaInsets();
   const navigation = useNavigation();
@@ -60,6 +54,63 @@ const RegisterScreen = () => {
   const [showPassword, setShowPassword] = useState(false);
   const [errors, setErrors] = useState({});
   const [loading, setLoading] = useState(false);
+
+  // ===== Teclado y desplazamiento =====
+  const scrollRef = useRef(null);
+  const apellidoRef = useRef(null);
+  const emailRef = useRef(null);
+  const passwordRef = useRef(null);
+  const confirmRef = useRef(null);
+
+  const [keyboardHeight, setKeyboardHeight] = useState(0);
+  const keyboardOpen = useRef(false);
+  const focusedField = useRef(null);
+  const contentY = useRef(0); // posición del bloque del formulario dentro del scroll
+  const fieldY = useRef({}); // posición de cada campo dentro del formulario
+
+  const trackField = (name) => (e) => {
+    fieldY.current[name] = e.nativeEvent.layout.y;
+  };
+
+  const scrollToField = (name) => {
+    const y = fieldY.current[name];
+    if (y == null) return;
+    setTimeout(() => {
+      scrollRef.current?.scrollTo({
+        y: Math.max(0, contentY.current + y - 24),
+        animated: true,
+      });
+    }, 120);
+  };
+
+  const onFocusField = (name) => {
+    focusedField.current = name;
+    // Si el teclado ya está abierto, sigue al nuevo campo
+    if (keyboardOpen.current) scrollToField(name);
+  };
+
+  useEffect(() => {
+    const showEvent =
+      Platform.OS === "ios" ? "keyboardWillShow" : "keyboardDidShow";
+    const hideEvent =
+      Platform.OS === "ios" ? "keyboardWillHide" : "keyboardDidHide";
+
+    const showSub = Keyboard.addListener(showEvent, (e) => {
+      keyboardOpen.current = true;
+      setKeyboardHeight(e.endCoordinates.height);
+      // Cuando ya se agregó el espacio del teclado, sube hasta el campo enfocado
+      if (focusedField.current) scrollToField(focusedField.current);
+    });
+    const hideSub = Keyboard.addListener(hideEvent, () => {
+      keyboardOpen.current = false;
+      setKeyboardHeight(0);
+    });
+
+    return () => {
+      showSub.remove();
+      hideSub.remove();
+    };
+  }, []);
 
   const clearError = (field) =>
     setErrors((prev) => ({ ...prev, [field]: undefined, general: undefined }));
@@ -85,13 +136,6 @@ const RegisterScreen = () => {
 
     setErrors(e);
     return Object.keys(e).length === 0;
-  };
-
-  const onChangeDate = (event, selected) => {
-    setShowDatePicker(false);
-    if (event.type === "dismissed" || !selected) return;
-    setFechaNac(selected);
-    clearError("fechaNac");
   };
 
   const handleRegister = async () => {
@@ -135,16 +179,18 @@ const RegisterScreen = () => {
   };
 
   return (
-    <KeyboardAvoidingView
-      style={styles.flex}
-      behavior={Platform.OS === "ios" ? "padding" : undefined}
-    >
+    <View style={styles.flex}>
       <StatusBar barStyle="light-content" backgroundColor={COLORS.primary} />
 
       <ScrollView
+        ref={scrollRef}
         style={styles.flex}
-        contentContainerStyle={styles.scroll}
+        contentContainerStyle={[
+          styles.scroll,
+          { paddingBottom: keyboardHeight },
+        ]}
         keyboardShouldPersistTaps="handled"
+        keyboardDismissMode={Platform.OS === "ios" ? "interactive" : "on-drag"}
         showsVerticalScrollIndicator={false}
       >
         {/* Header azul */}
@@ -154,7 +200,12 @@ const RegisterScreen = () => {
           </Text>
         </View>
 
-        <View style={styles.content}>
+        <View
+          style={styles.content}
+          onLayout={(e) => {
+            contentY.current = e.nativeEvent.layout.y;
+          }}
+        >
           <Image
             source={require("../../assets/logo.png")}
             style={styles.logo}
@@ -171,6 +222,10 @@ const RegisterScreen = () => {
               clearError("nombre");
             }}
             autoCapitalize="words"
+            returnKeyType="next"
+            onSubmitEditing={() => apellidoRef.current?.focus()}
+            onLayout={trackField("nombre")}
+            onFocus={() => onFocusField("nombre")}
           />
           {errors.nombre && (
             <Text style={styles.errorText}>{errors.nombre}</Text>
@@ -179,6 +234,7 @@ const RegisterScreen = () => {
           {/* Apellidos */}
           <Text style={[styles.label, styles.labelSpaced]}>Apellidos</Text>
           <TextInput
+            ref={apellidoRef}
             style={[styles.input, errors.apellido && styles.inputError]}
             value={apellido}
             onChangeText={(t) => {
@@ -186,6 +242,9 @@ const RegisterScreen = () => {
               clearError("apellido");
             }}
             autoCapitalize="words"
+            returnKeyType="done"
+            onLayout={trackField("apellido")}
+            onFocus={() => onFocusField("apellido")}
           />
           {errors.apellido && (
             <Text style={styles.errorText}>{errors.apellido}</Text>
@@ -229,6 +288,7 @@ const RegisterScreen = () => {
           {/* Correo */}
           <Text style={[styles.label, styles.labelSpaced]}>Correo</Text>
           <TextInput
+            ref={emailRef}
             style={[styles.input, errors.email && styles.inputError]}
             value={email}
             onChangeText={(t) => {
@@ -239,13 +299,18 @@ const RegisterScreen = () => {
             autoCapitalize="none"
             autoComplete="email"
             autoCorrect={false}
+            returnKeyType="next"
+            onSubmitEditing={() => passwordRef.current?.focus()}
+            onLayout={trackField("email")}
+            onFocus={() => onFocusField("email")}
           />
           {errors.email && <Text style={styles.errorText}>{errors.email}</Text>}
 
           {/* Contraseña */}
           <Text style={[styles.label, styles.labelSpaced]}>Contraseña</Text>
-          <View>
+          <View onLayout={trackField("password")}>
             <TextInput
+              ref={passwordRef}
               style={[
                 styles.input,
                 styles.inputPassword,
@@ -259,6 +324,9 @@ const RegisterScreen = () => {
               secureTextEntry={!showPassword}
               autoCapitalize="none"
               autoComplete="new-password"
+              returnKeyType="next"
+              onSubmitEditing={() => confirmRef.current?.focus()}
+              onFocus={() => onFocusField("password")}
             />
             <TouchableOpacity
               style={styles.eye}
@@ -284,6 +352,7 @@ const RegisterScreen = () => {
             Confirmar contraseña
           </Text>
           <TextInput
+            ref={confirmRef}
             style={[styles.input, errors.passwordConfirm && styles.inputError]}
             value={passwordConfirm}
             onChangeText={(t) => {
@@ -293,6 +362,10 @@ const RegisterScreen = () => {
             secureTextEntry={!showPassword}
             autoCapitalize="none"
             autoComplete="new-password"
+            returnKeyType="done"
+            onSubmitEditing={handleRegister}
+            onLayout={trackField("passwordConfirm")}
+            onFocus={() => onFocusField("passwordConfirm")}
           />
           {errors.passwordConfirm && (
             <Text style={styles.errorText}>{errors.passwordConfirm}</Text>
@@ -328,7 +401,7 @@ const RegisterScreen = () => {
           </View>
         </View>
       </ScrollView>
-    </KeyboardAvoidingView>
+    </View>
   );
 };
 
@@ -349,7 +422,7 @@ const styles = StyleSheet.create({
   accentText: { color: COLORS.accent },
 
   content: {
-    flex: 1,
+    flexGrow: 1, // CAMBIA: antes era flex: 1
     paddingHorizontal: SPACING.lg,
     paddingBottom: SPACING.xl,
   },

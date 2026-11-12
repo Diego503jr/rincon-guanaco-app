@@ -30,7 +30,8 @@
         {
           "locationAlwaysAndWhenInUsePermission": "Permitir que Rincón Guanaco acceda a tu ubicación para mostrarte alojamientos y destinos cercanos."
         }
-      ]
+      ],
+      "expo-sqlite"
     ]
   }
 }

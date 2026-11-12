@@ -21,6 +21,7 @@ import ActivityReserveScreen from "../screens/ActivityReserveScreen";
 import AccommodationReserveScreen from "../screens/AccommodationReserveScreen";
 import EditProfileScreen from "../screens/EditProfileScreen";
 import SupportScreen from '..//screens/SupportScreen';
+import OfflineGuideScreen from "../screens/OfflineGuideScreen"
 
 const Stack = createNativeStackNavigator();
 
@@ -95,6 +96,7 @@ export default function StackNavigation() {
           <>
             <Stack.Screen name="Login" component={LoginScreen} />
             <Stack.Screen name="Register" component={RegisterScreen} />
+            <Stack.Screen name="Guide" component={OfflineGuideScreen} />
           </>
         )}
       </Stack.Navigator>

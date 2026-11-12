@@ -48,8 +48,10 @@ const LoginScreen = () => {
   const [keyboardHeight, setKeyboardHeight] = useState(0);
 
   useEffect(() => {
-    const showEvent = Platform.OS === "ios" ? "keyboardWillShow" : "keyboardDidShow";
-    const hideEvent = Platform.OS === "ios" ? "keyboardWillHide" : "keyboardDidHide";
+    const showEvent =
+      Platform.OS === "ios" ? "keyboardWillShow" : "keyboardDidShow";
+    const hideEvent =
+      Platform.OS === "ios" ? "keyboardWillHide" : "keyboardDidHide";
 
     const showSub = Keyboard.addListener(showEvent, (e) => {
       setKeyboardHeight(e.endCoordinates.height);
@@ -126,7 +128,10 @@ const LoginScreen = () => {
       <ScrollView
         ref={scrollRef}
         style={styles.flex}
-        contentContainerStyle={[styles.scroll, { paddingBottom: keyboardHeight }]}
+        contentContainerStyle={[
+          styles.scroll,
+          { paddingBottom: keyboardHeight },
+        ]}
         keyboardShouldPersistTaps="handled"
         keyboardDismissMode={Platform.OS === "ios" ? "interactive" : "on-drag"}
         showsVerticalScrollIndicator={false}
@@ -238,13 +243,27 @@ const LoginScreen = () => {
           </View>
         </View>
       </ScrollView>
+
+      <TouchableOpacity
+        style={[styles.fab, { bottom: insets.bottom + SPACING.lg }]}
+        onPress={() => navigation.navigate("Guide")}
+        activeOpacity={0.85}
+        accessibilityLabel="Abrir guía de viaje offline"
+      >
+        <Ionicons
+          name="cloud-download-outline"
+          size={22}
+          color={COLORS.white}
+        />
+        <Text style={styles.fabText}>Guía offline</Text>
+      </TouchableOpacity>
     </View>
   );
 };
 
 const styles = StyleSheet.create({
-  flex: { flex: 1 },            // NUEVO
-  scroll: { flexGrow: 1 },      // NUEVO
+  flex: { flex: 1 }, // NUEVO
+  scroll: { flexGrow: 1 }, // NUEVO
 
   header: {
     backgroundColor: COLORS.primary,
@@ -259,7 +278,7 @@ const styles = StyleSheet.create({
   accentText: { color: COLORS.accent },
 
   content: {
-    flexGrow: 1,                // CAMBIA: antes era flex: 1
+    flexGrow: 1, // CAMBIA: antes era flex: 1
     paddingHorizontal: SPACING.lg,
     paddingTop: SPACING.lg,
     paddingBottom: SPACING.xl,
@@ -329,6 +348,27 @@ const styles = StyleSheet.create({
     fontFamily: FONTS.heading,
     fontSize: SIZES.body,
     color: COLORS.primary,
+  },
+  fab: {
+    position: "absolute",
+    right: SPACING.lg,
+    flexDirection: "row",
+    alignItems: "center",
+    backgroundColor: COLORS.accent,
+    paddingVertical: 12,
+    paddingHorizontal: SPACING.md,
+    borderRadius: RADIUS.pill,
+    elevation: 6,
+    shadowColor: "#000",
+    shadowOffset: { width: 0, height: 3 },
+    shadowOpacity: 0.25,
+    shadowRadius: 4,
+  },
+  fabText: {
+    fontFamily: FONTS.heading,
+    fontSize: SIZES.body,
+    color: COLORS.white,
+    marginLeft: 8,
   },
 });
 

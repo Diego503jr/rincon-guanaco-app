@@ -1,4 +1,4 @@
-import { useState, useRef } from "react";
+import { useState, useRef, useEffect } from "react";
 import {
   View,
   Text,
@@ -8,7 +8,7 @@ import {
   StyleSheet,
   StatusBar,
   ScrollView,
-  KeyboardAvoidingView,
+  Keyboard,
   Platform,
   ActivityIndicator,
 } from "react-native";
@@ -25,11 +25,13 @@ import {
 } from "../constants/theme";
 import { useUser } from "../context/UserContext";
 import { getErrorMessage } from "../api/errors";
-import AsyncStorage from '@react-native-async-storage/async-storage';
+import AsyncStorage from "@react-native-async-storage/async-storage";
+
+const EMAIL_REGEX = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
 
 const LoginScreen = () => {
   const insets = useSafeAreaInsets();
-
+  const navigation = useNavigation();
   const { login } = useUser();
 
   const [email, setEmail] = useState("");
@@ -38,12 +40,29 @@ const LoginScreen = () => {
   const [errors, setErrors] = useState({});
   const [loading, setLoading] = useState(false);
 
-  const navigation = useNavigation();
-
-  const EMAIL_REGEX = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
-
+  const scrollRef = useRef(null);
   const emailRef = useRef(null);
   const passwordRef = useRef(null);
+
+  // Alto del teclado: se suma como relleno inferior para poder deslizar
+  const [keyboardHeight, setKeyboardHeight] = useState(0);
+
+  useEffect(() => {
+    const showEvent = Platform.OS === "ios" ? "keyboardWillShow" : "keyboardDidShow";
+    const hideEvent = Platform.OS === "ios" ? "keyboardWillHide" : "keyboardDidHide";
+
+    const showSub = Keyboard.addListener(showEvent, (e) => {
+      setKeyboardHeight(e.endCoordinates.height);
+      // Sube el contenido para dejar a la vista los campos y el botón
+      setTimeout(() => scrollRef.current?.scrollToEnd({ animated: true }), 50);
+    });
+    const hideSub = Keyboard.addListener(hideEvent, () => setKeyboardHeight(0));
+
+    return () => {
+      showSub.remove();
+      hideSub.remove();
+    };
+  }, []);
 
   const validate = () => {
     const newErrors = {};
@@ -81,17 +100,17 @@ const LoginScreen = () => {
     try {
       await login(email.trim(), password);
 
-      //OnBoarding por usuario unico
+      // Onboarding por usuario único
       const userIdentifier = email.trim().toLowerCase();
       const storageKey = `@onboarding_${userIdentifier}`;
 
       const hasSeenOnboarding = await AsyncStorage.getItem(storageKey);
 
-      if (hasSeenOnboarding === 'true') {
-        navigation.replace('Explorer');
+      if (hasSeenOnboarding === "true") {
+        navigation.replace("Explorer");
       } else {
         // Pasamos el identificador a la pantalla de Onboarding mediante los parámetros
-        navigation.replace('Onboarding', { userId: userIdentifier });
+        navigation.replace("Onboarding", { userId: userIdentifier });
       }
     } catch (error) {
       setErrors({ general: getErrorMessage(error) });
@@ -101,16 +120,15 @@ const LoginScreen = () => {
   };
 
   return (
-    <KeyboardAvoidingView
-      style={styles.flex}
-      behavior={Platform.OS === "ios" ? "padding" : undefined}
-    >
+    <View style={styles.flex}>
       <StatusBar barStyle="light-content" backgroundColor={COLORS.primary} />
 
       <ScrollView
+        ref={scrollRef}
         style={styles.flex}
-        contentContainerStyle={styles.scroll}
+        contentContainerStyle={[styles.scroll, { paddingBottom: keyboardHeight }]}
         keyboardShouldPersistTaps="handled"
+        keyboardDismissMode={Platform.OS === "ios" ? "interactive" : "on-drag"}
         showsVerticalScrollIndicator={false}
       >
         {/* Header azul */}
@@ -134,6 +152,7 @@ const LoginScreen = () => {
           {/* Correo */}
           <Text style={styles.label}>Correo</Text>
           <TextInput
+            ref={emailRef}
             style={[styles.input, errors.email && styles.inputError]}
             value={email}
             onChangeText={(text) => {
@@ -144,6 +163,8 @@ const LoginScreen = () => {
             autoCapitalize="none"
             autoComplete="email"
             autoCorrect={false}
+            returnKeyType="next"
+            onSubmitEditing={() => passwordRef.current?.focus()}
           />
           {errors.email && <Text style={styles.errorText}>{errors.email}</Text>}
 
@@ -151,6 +172,7 @@ const LoginScreen = () => {
           <Text style={[styles.label, styles.labelSpaced]}>Contraseña</Text>
           <View>
             <TextInput
+              ref={passwordRef}
               style={[
                 styles.input,
                 styles.inputPassword,
@@ -164,6 +186,8 @@ const LoginScreen = () => {
               secureTextEntry={!showPassword}
               autoCapitalize="none"
               autoComplete="password"
+              returnKeyType="done"
+              onSubmitEditing={handleLogin}
             />
             <TouchableOpacity
               style={styles.eye}
@@ -214,15 +238,13 @@ const LoginScreen = () => {
           </View>
         </View>
       </ScrollView>
-    </KeyboardAvoidingView>
+    </View>
   );
 };
 
 const styles = StyleSheet.create({
-  container: {
-    flex: 1,
-    backgroundColor: COLORS.primary,
-  },
+  flex: { flex: 1 },            // NUEVO
+  scroll: { flexGrow: 1 },      // NUEVO
 
   header: {
     backgroundColor: COLORS.primary,
@@ -237,7 +259,7 @@ const styles = StyleSheet.create({
   accentText: { color: COLORS.accent },
 
   content: {
-    flex: 1,
+    flexGrow: 1,                // CAMBIA: antes era flex: 1
     paddingHorizontal: SPACING.lg,
     paddingTop: SPACING.lg,
     paddingBottom: SPACING.xl,
@@ -285,6 +307,7 @@ const styles = StyleSheet.create({
     color: COLORS.accent,
     marginTop: SPACING.xs,
   },
+  generalError: { textAlign: "center", marginTop: SPACING.md }, // NUEVO
 
   button: {
     height: 48,
